@@ -1,4 +1,4 @@
-// <copyright file="Point.cs" company="Riziv-Inami">
+﻿// <copyright file="Point.cs" company="Riziv-Inami">
 // Copyright (c) Riziv-Inami. All rights reserved.
 // </copyright>
 

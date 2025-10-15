@@ -1,4 +1,4 @@
-// <copyright file="IPseudonymInTransit.cs" company="Riziv-Inami">
+﻿// <copyright file="IPseudonymInTransit.cs" company="Riziv-Inami">
 // Copyright (c) Riziv-Inami. All rights reserved.
 // </copyright>
 

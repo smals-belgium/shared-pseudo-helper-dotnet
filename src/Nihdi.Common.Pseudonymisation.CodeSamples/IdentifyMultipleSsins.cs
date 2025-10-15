@@ -1,4 +1,4 @@
-// <copyright file="IdentifyMultipleSsins.cs" company="Riziv-Inami">
+﻿// <copyright file="IdentifyMultipleSsins.cs" company="Riziv-Inami">
 // Copyright (c) Riziv-Inami. All rights reserved.
 // </copyright>
 

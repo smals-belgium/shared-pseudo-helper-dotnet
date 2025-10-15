@@ -1,4 +1,4 @@
-// <copyright file="MyPseudonymisationClient.cs" company="Riziv-Inami">
+﻿// <copyright file="MyPseudonymisationClient.cs" company="Riziv-Inami">
 // Copyright (c) Riziv-Inami. All rights reserved.
 // </copyright>
 

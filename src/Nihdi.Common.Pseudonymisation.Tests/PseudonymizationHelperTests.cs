@@ -117,54 +117,59 @@ public class PseudonymisationHelperTest
     // [Ignore]
     public void ShowGeneratedTestData()
     {
-        TestContext?.WriteLine("========================================");
-        TestContext?.WriteLine("GENERATED TEST DATA SAMPLE");
-        TestContext?.WriteLine("========================================");
-        TestContext?.WriteLine(string.Empty);
+        try
+        {
+            TestContext?.WriteLine("========================================");
+            TestContext?.WriteLine("GENERATED TEST DATA SAMPLE");
+            TestContext?.WriteLine("========================================");
+            TestContext?.WriteLine(string.Empty);
 
-        TestContext?.WriteLine("This test shows the structure of the generated test data.");
-        TestContext?.WriteLine("The domain.json simulates the eHealth service response without requiring actual service calls.");
-        TestContext?.WriteLine(string.Empty);
+            TestContext?.WriteLine("This test shows the structure of the generated test data.");
+            TestContext?.WriteLine("The domain.json simulates the eHealth service response without requiring actual service calls.");
+            TestContext?.WriteLine(string.Empty);
 
-        TestContext?.WriteLine("--- DOMAIN.JSON ---");
-        TestContext?.WriteLine(_dynamicDomainJson);
-        TestContext?.WriteLine(string.Empty);
+            TestContext?.WriteLine("--- DOMAIN.JSON ---");
+            TestContext?.WriteLine(_dynamicDomainJson);
+            TestContext?.WriteLine(string.Empty);
 
-        TestContext?.WriteLine("--- UHMEP PRIVATE JWK ---");
-        TestContext?.WriteLine($"Kid: {_uhmepKey.Kid}");
-        TestContext?.WriteLine($"x5t#S256: {ComputeX5tS256(_generatedCertificates[_uhmepKey.Kid])}");
-        TestContext?.WriteLine(_uhmepJwk);
-        TestContext?.WriteLine(string.Empty);
+            TestContext?.WriteLine("--- UHMEP PRIVATE JWK ---");
+            TestContext?.WriteLine($"Kid: {_uhmepKey.Kid}");
+            TestContext?.WriteLine($"x5t#S256: {ComputeX5tS256(_generatedCertificates[_uhmepKey.Kid])}");
+            TestContext?.WriteLine(_uhmepJwk);
+            TestContext?.WriteLine(string.Empty);
 
-        TestContext?.WriteLine("--- PSEUDONYMISATION PRIVATE JWK ---");
-        TestContext?.WriteLine($"Kid: {_pseudoKey.Kid}");
-        TestContext?.WriteLine($"x5t#S256: {ComputeX5tS256(_generatedCertificates[_pseudoKey.Kid])}");
-        TestContext?.WriteLine(_pseudoJwk);
-        TestContext?.WriteLine(string.Empty);
+            TestContext?.WriteLine("--- PSEUDONYMISATION PRIVATE JWK ---");
+            TestContext?.WriteLine($"Kid: {_pseudoKey.Kid}");
+            TestContext?.WriteLine($"x5t#S256: {ComputeX5tS256(_generatedCertificates[_pseudoKey.Kid])}");
+            TestContext?.WriteLine(_pseudoJwk);
+            TestContext?.WriteLine(string.Empty);
 
-        TestContext?.WriteLine("--- PUBLIC KEYS JWKS ---");
-        TestContext?.WriteLine(CreateJwks(_uhmepKey, _pseudoKey));
-        TestContext?.WriteLine(string.Empty);
+            TestContext?.WriteLine("--- PUBLIC KEYS JWKS ---");
+            TestContext?.WriteLine(CreateJwks(_uhmepKey, _pseudoKey));
+            TestContext?.WriteLine(string.Empty);
 
-        TestContext?.WriteLine("--- TEST INFORMATION ---");
-        TestContext?.WriteLine($"Generated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-        TestContext?.WriteLine("Test SSINs used: 012345678910, 987654321012, 123456789012");
-        TestContext?.WriteLine(string.Empty);
-        TestContext?.WriteLine("NOTE: This is TEST DATA for DEMONSTRATION PURPOSES ONLY, using self-signed certificates.");
-        TestContext?.WriteLine("DO NOT use these keys in production or with actual eHealth services.");
+            TestContext?.WriteLine("--- TEST INFORMATION ---");
+            TestContext?.WriteLine($"Generated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            TestContext?.WriteLine("Test SSINs used: 012345678910, 987654321012, 123456789012");
+            TestContext?.WriteLine(string.Empty);
+            TestContext?.WriteLine("NOTE: This is TEST DATA for DEMONSTRATION PURPOSES ONLY, using self-signed certificates.");
+            TestContext?.WriteLine("DO NOT use these keys in production or with actual eHealth services.");
 
-        // Also write to console for immediate visibility
-        Console.WriteLine("========================================");
-        Console.WriteLine("GENERATED TEST DATA SAMPLE");
-        Console.WriteLine("========================================");
-        Console.WriteLine(string.Empty);
-        Console.WriteLine("--- DOMAIN.JSON ---");
-        Console.WriteLine(_dynamicDomainJson);
-        Console.WriteLine(string.Empty);
-        Console.WriteLine($"--- UHMEP KEY: {_uhmepKey.Kid}, x5t#S256: {ComputeX5tS256(_generatedCertificates[_uhmepKey.Kid])} ---");
-        Console.WriteLine($"--- PSEUDO KEY: {_pseudoKey.Kid}, x5t#S256: {ComputeX5tS256(_generatedCertificates[_pseudoKey.Kid])} ---");
-
-        Assert.IsTrue(true);
+            // Also write to console for immediate visibility
+            Console.WriteLine("========================================");
+            Console.WriteLine("GENERATED TEST DATA SAMPLE");
+            Console.WriteLine("========================================");
+            Console.WriteLine(string.Empty);
+            Console.WriteLine("--- DOMAIN.JSON ---");
+            Console.WriteLine(_dynamicDomainJson);
+            Console.WriteLine(string.Empty);
+            Console.WriteLine($"--- UHMEP KEY: {_uhmepKey.Kid}, x5t#S256: {ComputeX5tS256(_generatedCertificates[_uhmepKey.Kid])} ---");
+            Console.WriteLine($"--- PSEUDO KEY: {_pseudoKey.Kid}, x5t#S256: {ComputeX5tS256(_generatedCertificates[_pseudoKey.Kid])} ---");
+        }
+        catch (Exception ex)
+        {
+            Assert.Fail("An error occurred while generating or displaying test data: " + ex.Message);
+        }
     }
 
     // Make helper methods static
