@@ -1,4 +1,4 @@
-﻿// <copyright file="PseudonymisationHelper.cs" company="Riziv-Inami">
+// <copyright file="PseudonymisationHelper.cs" company="Riziv-Inami">
 // Copyright (c) Riziv-Inami. All rights reserved.
 // </copyright>
 
@@ -126,52 +126,6 @@ public sealed class PseudonymisationHelper
     }
 
     /// <summary>
-    /// Converts a JWK JSON string to RSA private key parameters.
-    /// </summary>
-    /// <param name="jwkJson">The JWK JSON string.</param>
-    /// <returns>The RSA private key parameters.</returns>
-    public static RsaPrivateCrtKeyParameters ConvertJwkToPrivateKey(string jwkJson)
-    {
-        // Parse the JWK JSON
-        var jwk = JObject.Parse(jwkJson);
-
-        // Extract and convert parameters from Base64Url to BigInteger
-        var n = new BigInteger(1, Base64UrlDecode(jwk["n"]?.ToString()));
-        var e = new BigInteger(1, Base64UrlDecode(jwk["e"]?.ToString()));
-        var d = new BigInteger(1, Base64UrlDecode(jwk["d"]?.ToString()));
-        var p = new BigInteger(1, Base64UrlDecode(jwk["p"]?.ToString()));
-        var q = new BigInteger(1, Base64UrlDecode(jwk["q"]?.ToString()));
-        var dp = new BigInteger(1, Base64UrlDecode(jwk["dp"]?.ToString()));
-        var dq = new BigInteger(1, Base64UrlDecode(jwk["dq"]?.ToString()));
-        var qi = new BigInteger(1, Base64UrlDecode(jwk["qi"]?.ToString()));
-
-        // Create RSA private key parameters
-        return new RsaPrivateCrtKeyParameters(n, e, d, p, q, dp, dq, qi);
-    }
-
-    /// <summary>
-    /// Decodes a Base64Url-encoded string to a byte array.
-    /// </summary>
-    /// <param name="input">The Base64Url-encoded string.</param>
-    /// <returns>The decoded byte array.</returns>
-    public static byte[] Base64UrlDecode(string? input)
-    {
-        if (input == null)
-        {
-            throw new ArgumentException($"Field `{input}` can not be null or empty.", nameof(input));
-        }
-
-        string output = input.Replace('-', '+').Replace('_', '/'); // Replace URL-safe characters
-        switch (output.Length % 4)
-        {
-            case 2: output += "=="; break;
-            case 3: output += "="; break;
-        }
-
-        return Convert.FromBase64String(output);
-    }
-
-    /// <summary>
     /// Creates a new instance of the <see cref="PseudonymisationHelperBuilder"/> class.
     /// </summary>
     /// <returns>A new instance of the <see cref="PseudonymisationHelperBuilder"/> class.</returns>
@@ -242,6 +196,22 @@ public sealed class PseudonymisationHelper
 
         return RefreshDomain(domainKey).ContinueWith(t => _domains[domainKey]);
     }
+
+    /// <summary>
+    /// Decodes a Base64Url-encoded string to a byte array.
+    /// </summary>
+    /// <param name="input">The Base64Url-encoded string.</param>
+    /// <returns>The decoded byte array.</returns>
+    private static byte[] Base64UrlDecode(string? input)
+    {
+        if (string.IsNullOrEmpty(input))
+        {
+            throw new ArgumentException($"Field `{input}` cannot be null or empty.", nameof(input));
+        }
+
+        return Base64UrlEncoder.DecodeBytes(input);
+    }
+
 
     private Domain CreateDomain(string rawDomain)
     {
