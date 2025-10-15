@@ -1,0 +1,87 @@
+﻿// <copyright file="JweHeader.cs" company="Riziv-Inami">
+// Copyright (c) Riziv-Inami. All rights reserved.
+// </copyright>
+
+namespace Nihdi.Common.Pseudonymisation.Jose;
+
+using System.Text.Json;
+using Microsoft.IdentityModel.Tokens;
+
+public class JweHeader
+{
+    public string Alg { get; protected set; } = string.Empty;
+
+    public string Enc { get; protected set; } = string.Empty;
+
+    public string Kid { get; set; } = string.Empty;
+
+    public Dictionary<string, object> CustomParams { get; protected set; } = new();
+
+    public Dictionary<string, object> ToDictionary()
+    {
+        var dict = new Dictionary<string, object>();
+
+        if (!string.IsNullOrEmpty(Alg))
+        {
+            dict["alg"] = Alg;
+        }
+
+        if (!string.IsNullOrEmpty(Enc))
+        {
+            dict["enc"] = Enc;
+        }
+
+        if (!string.IsNullOrEmpty(Kid))
+        {
+            dict["kid"] = Kid;
+        }
+
+        foreach (var kvp in CustomParams)
+        {
+            dict[kvp.Key] = kvp.Value;
+        }
+
+        return dict;
+    }
+
+    public string ToJson()
+    {
+        return JsonSerializer.Serialize(ToJson());
+    }
+
+    public string ToBase64Url()
+    {
+        return Base64UrlEncoder.Encode(ToJson());
+    }
+
+    public class Builder
+    {
+        private JweAlgorithm _alg;
+        private JweContentEncryptionAlgorithm? _enc;
+
+        public Builder(JweAlgorithm alg, JweContentEncryptionAlgorithm enc)
+        {
+            this._alg = alg;
+            this._enc = enc;
+        }
+
+        public string? Kid
+        {
+            get; private set;
+        }
+
+        public Dictionary<string, object> CustomParameters { get; private set; } = new Dictionary<string, object>();
+
+        public Builder KeyId(string kid)
+        {
+            Kid = kid;
+            return this;
+        }
+
+        public Builder CustomParams(Dictionary<string, object> customParams)
+        {
+            CustomParameters = customParams;
+            return this;
+        }
+    }
+}

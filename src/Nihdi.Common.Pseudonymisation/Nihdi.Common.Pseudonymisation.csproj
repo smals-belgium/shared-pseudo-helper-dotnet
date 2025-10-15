@@ -1,0 +1,57 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>net48;net8.0</TargetFrameworks>
+	</PropertyGroup>
+
+	<!-- Exclude .NET Framework 4.8 builds on non-Windows systems -->
+	<PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+		<TargetFrameworks>net8.0</TargetFrameworks>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+		<GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<LangVersion>12.0</LangVersion>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<PackageTags></PackageTags>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<Authors>RIZIV-INAMI</Authors>
+		<Description>A .NET library that helps integrators interact with the eHealth Pseudonymisation service.</Description>
+		<Title>Pseudonymisation Helper</Title>
+		<Summary>Be ICT Reuse - Pseudonymisation Helper</Summary>
+		<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+		<PackageProjectUrl>https://github.com/smals-belgium/shared-pseudo-helper-dotnet</PackageProjectUrl>
+		<PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
+		<RepositoryUrl>https://github.com/smals-belgium/shared-pseudo-helper-dotnet</RepositoryUrl>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<NoWarn>SA1305</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <None Include="..\..\LICENSE">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
+	  <None Include="README.md" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="BouncyCastle.Cryptography" Version="2.4.0" />
+		<PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
+		<PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="Nihdi.StyleCop.MsBuildProperties" Version="1.8.2" />
+		<PackageReference Include="System.Collections.Immutable" Version="9.0.2" />
+		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.6.2" />
+		<PackageReference Include="System.Text.Json" Version="8.0.5" />
+	</ItemGroup>
+</Project>

@@ -1,0 +1,20 @@
+resources:
+  repositories:
+    - repository: templates
+      type: git
+      name: Common/yaml-Templates
+      ref: main
+
+trigger:
+- main
+- dev
+- feat/*
+- hotfix/*
+
+extends:
+  template: CI-CD.yml@templates  # Template reference
+  parameters:
+    productName: "Pseudonymisation"
+    IncludeDevEnvironment: false
+    SkipProductionBranchesInTstDev: true
+    
