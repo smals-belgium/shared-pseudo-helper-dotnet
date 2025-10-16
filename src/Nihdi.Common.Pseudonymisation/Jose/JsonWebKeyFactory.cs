@@ -72,7 +72,7 @@ public static class JsonWebKeyFactory
         {
             "enc" => "A256GCM",
             "sig" => "HS256",
-            _ => "A256CM",
+            _ => "A256GCM",
         };
     }
 

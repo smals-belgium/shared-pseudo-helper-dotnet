@@ -1,6 +1,6 @@
 ﻿# Style rules for RIZIV-INAMI
 [*.cs]
-charset = utf-8
+charset = utf-8-bom
 
 #Core editorconfig formatting - indentation
 
