@@ -1,0 +1,49 @@
+[plantuml]
+----
+@startuml
+
+!theme cerulean
+skinparam actorStyle             awesome
+skinparam BackgroundColor        white
+skinparam BoxPadding             0
+skinparam Padding                2
+skinparam ParticipantPadding     2
+skinparam SequenceBoxBorderColor Transparent
+autonumber
+
+box Prescriber
+actor Prescriber as prescriber
+participant "Integrator software" as software
+participant "Pseudonymization helper (library)" as helper
+end box
+box UHMEP
+participant "UHMEP API" as uhmep
+end box
+box eHealth
+participant "Pseudonymization service" as pseudo
+participant "Attribute Authority" as aa
+end box
+
+prescriber -> software ++: Request prescriptions for a patient\n[SSIN]
+software   -> helper   ++: Pseudonymize [SSIN]
+helper     -> helper     : Convert SSIN to an EC point\n[SSIN] -> [EC point]
+helper     -> helper     : Blind EC point\n[EC point] -> [blinded EC point]
+helper     -> pseudo   ++: Pseudonymize for UHMEP domain\n[blinded EC point]
+helper     <- pseudo   --: [blinded pseudonym in transit]
+helper     -> helper     : Unblind the pseudonym in transit\n[blinded pseudonym in transit]\n-> [pseudonym in transit]
+helper     -> software --: [pseudonym in transit]
+software   -> uhmep    ++: Request prescriptions [pseudonym in transit]
+uhmep      -> uhmep      : Decrypt the pseudonym in transit\n[pseudonym in transit] -> [pseudonym]
+uhmep      -> uhmep      : Blind the pseudonym\n[pseudonym] -> [blinded pseudonym]
+uhmep      -> pseudo   ++: Convert the blinded pseudonym\nto eHealth domain\n[blinded pseudonym]
+uhmep      <- pseudo   --: [blinded eHealth pseudonym in transit]
+uhmep      -> uhmep      : Unblind the blinded\neHealth pseudonym in transit\n[blinded eHealth pseudonym in transit]\n -> [eHealth pseudonym in transit]
+uhmep      -> aa       ++: Request therapeutic relations status\n[eHealth pseudonym in transit]
+uhmep      <- aa       --: [therapeutic relations status]
+uhmep      -> uhmep      : Search for the prescriptions\nof the patient in its database\nusing the X coordinate\nof pseudonym at rest\n as patient's identifier
+software   <- uhmep    --: [prescriptions]
+prescriber <- software --: [prescriptions]
+
+@enduml
+
+----

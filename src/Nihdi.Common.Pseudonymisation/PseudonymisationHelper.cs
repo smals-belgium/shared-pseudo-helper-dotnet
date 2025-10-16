@@ -194,7 +194,7 @@ public sealed class PseudonymisationHelper
             return Task.FromResult(domain);
         }
 
-        return RefreshDomain(domainKey).ContinueWith(t => _domains[domainKey]);
+        return RefreshDomain(domainKey).ContinueWith(unused => _domains[domainKey]);
     }
 
     /// <summary>

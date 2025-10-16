@@ -10,10 +10,6 @@ namespace Nihdi.Common.Pseudonymisation;
 /// Represents a domain for pseudonymisation operations, providing factories and configuration
 /// for pseudonym generation and management.
 /// </summary>
-/// <remarks>
-/// A domain encapsulates the context and behavior for pseudonymisation processes, including
-/// how values are created, transformed into pseudonyms, and handled during transit between systems.
-/// </remarks>
 public interface IDomain
 {
     /// <summary>

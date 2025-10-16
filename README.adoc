@@ -94,8 +94,6 @@ Hence, domains can be thought of as separate islands; on each island, the citize
 
 == Use case example
 
-
-
 This section aims to explain the use of pseudonymisation in a real use case.
 It will focus on the manipulation of the patient identifier and the returned data.
 This means that it will list the operations to apply on the identifier/data, but it will not explain how the library will do it technically.
@@ -105,55 +103,7 @@ The back-end (called UHMEP in our example) will call an external eHealth service
 Once this check is done, the prescriptions will be returned to the prescriber.
 An explanatory text of the diagram is present just after it.
 
-[plantuml]
-----
-@startuml
-
-!theme cerulean
-skinparam actorStyle             awesome
-skinparam BackgroundColor        white
-skinparam BoxPadding             0
-skinparam Padding                2
-skinparam ParticipantPadding     2
-skinparam SequenceBoxBorderColor Transparent
-autonumber
-
-box Prescriber
-actor Prescriber as prescriber
-participant "Integrator software" as software
-participant "Pseudonymization helper (library)" as helper
-end box
-box UHMEP
-participant "UHMEP API" as uhmep
-end box
-box eHealth
-participant "Pseudonymization service" as pseudo
-participant "Attribute Authority" as aa
-end box
-
-prescriber -> software ++: Request prescriptions for a patient\n[SSIN]
-software   -> helper   ++: Pseudonymize [SSIN]
-helper     -> helper     : Convert SSIN to an EC point\n[SSIN] -> [EC point]
-helper     -> helper     : Blind EC point\n[EC point] -> [blinded EC point]
-helper     -> pseudo   ++: Pseudonymize for UHMEP domain\n[blinded EC point]
-helper     <- pseudo   --: [blinded pseudonym in transit]
-helper     -> helper     : Unblind the pseudonym in transit\n[blinded pseudonym in transit]\n-> [pseudonym in transit]
-helper     -> software --: [pseudonym in transit]
-software   -> uhmep    ++: Request prescriptions [pseudonym in transit]
-uhmep      -> uhmep      : Decrypt the pseudonym in transit\n[pseudonym in transit] -> [pseudonym]
-uhmep      -> uhmep      : Blind the pseudonym\n[pseudonym] -> [blinded pseudonym]
-uhmep      -> pseudo   ++: Convert the blinded pseudonym\nto eHealth domain\n[blinded pseudonym]
-uhmep      <- pseudo   --: [blinded eHealth pseudonym in transit]
-uhmep      -> uhmep      : Unblind the blinded\neHealth pseudonym in transit\n[blinded eHealth pseudonym in transit]\n -> [eHealth pseudonym in transit]
-uhmep      -> aa       ++: Request therapeutic relations status\n[eHealth pseudonym in transit]
-uhmep      <- aa       --: [therapeutic relations status]
-uhmep      -> uhmep      : Search for the prescriptions\nof the patient in its database\nusing the X coordinate\nof pseudonym at rest\n as patient's identifier
-software   <- uhmep    --: [prescriptions]
-prescriber <- software --: [prescriptions]
-
-@enduml
-
-----
+image::doc/images/use-case-1.png[]
 
 1-2::
 The patient identifier cannot be given to the back-end application.
@@ -183,13 +133,10 @@ Once the verification is done, the back-end can return the prescriptions with a 
 The integrator software can use the library to link this pseudonym in transit to the original identifier.
 In this case, this last call is not necessary but will be if the prescriber consults prescriptions he created and then receives prescriptions for many patients.
 
-== Build the Pseudonymisation Helper library
 
-.NET 8.0
-dotnet build ./src/Nihdi.Common.Pseudonymisation/Nihdi.Common.Pseudonymisation.csproj
-
-.NET 4.8
-msbuild /t:Build /p:Configuration=Release ./src/Nihdi.Common.Pseudonymisation/Nihdi.Common.Pseudonymisation.csproj
+== Nuget Package
+To use the library in your project, you need to add the Nuget package `Nihdi.Common.Pseudonymisation`.
+The package is available on Nuget.org: https://www.nuget.org/packages/Nihdi.Common.Pseudonymisation/.
 
 == Initialization PseudonymisationHelper
 
@@ -207,7 +154,7 @@ Ensure that you have the required parameters for initialization:
 
 | *pseudonymisationClient*
 | `IPseudonymisationClient`
-| The `PseudonymisationClient` to use to make calls to eHealth Pseudonymisation service.
+| The `IPseudonymisationClient` interface used to make calls to eHealth Pseudonymisation service.
 
 | jwksUrl
 | `Uri`
@@ -240,12 +187,12 @@ For example, the software of a physician only needs to provide `pseudonymisation
 
 [source,cs]
 ----
-include::src/Be.Ict.Reuse.Pseudonymisation.CodeSamples/PseudonymisationHelper_Initialization.cs[tag=snippet1]
+include::src/Nihdi.Common.Pseudonymisation.CodeSamples/PseudonymisationHelper_Initialization.cs[tag=snippet1]
 ----
 
 [source,cs]
 ----
-include::src/Be.Ict.Reuse.Pseudonymisation.CodeSamples/PseudonymisationHelper_Initialization.cs[tag=snippet2]
+include::src/Nihdi.Common.Pseudonymisation.CodeSamples/PseudonymisationHelper_Initialization.cs[tag=snippet2]
 ----
 
 [TIP]
@@ -270,7 +217,7 @@ include::src//Nihdi.Common.Pseudonymisation/IPseudonymisationClient.cs[tag=metho
 
 The first step after the initialization is to retrieve a domain.
 
-`getDomain()` will use the `PseudonmymisationClient` you provided in the constructor to call eHealth Pseudonymisation service. This call is asynchronous and that's why it returns a `Task<string>`.
+`GetDomain()` will use the `PseudonmymisationClient` you provided in the constructor to call eHealth Pseudonymisation service. This call is asynchronous and that's why it returns a `Task<string>`.
 
 [TIP]
 ====
@@ -278,7 +225,7 @@ Your `PseudonmymisationClient` must call eHealth Pseudonymisation service for th
 For the other domains, your `PseudonmymisationClient` should return a hardcoded representation of the domain.
 ====
 
-.Exemple with Be.Ict.Reusehealth_v1` domain
+.Example with hardcoded `ehealth_v1` domain
 ====
 [source,cs]
 ----
@@ -286,7 +233,7 @@ include::src//Nihdi.Common.Pseudonymisation.CodeSamples/MyPseudonymisationClient
 ----
 ====
 
-.Exemple that Be.Ict.Reuse `uhmep_v1` domain
+.Example that retrieve the `uhmep_v1` domain
 ====
 [source,cs]
 ----
@@ -394,7 +341,7 @@ To avoid writing too much code here, we will provide few examples in both synchr
 
 In this example, as a user of a pseudonymised REST API, I want to pseudonymise a citizen's SSIN before sending my request to the REST API.
 
-.Synchronous cBe.Ict.Reuse
+.Synchronous code
 
 [source,cs,indent=2]
 ----
@@ -409,18 +356,14 @@ include::src//Nihdi.Common.Pseudonymisation.CodeSamples/PseudonymiseASsin.cs[tag
 
 === Pseudonymise a string
 
-eHealth asks not to pseudonymise values that exceed 32 bytes.
-Depending on the encoding, 32 bytes does not mean 32 characters.
-`ValueFactory` first converts the string into a byte[] using the given `Charset` (UTF-8 by default).
-You can use any Charset you want to have better control over the string-to-bytes conversion, and consequently, better control over the byte array size.
-Be.Ict.Reuse
+eHealth asks not to pseudonymise values that exceed 32 bytes. Depending on the encoding, 32 bytes does not mean 32 characters. `ValueFactory` first converts the string into a byte[] using the given `Charset` (UTF-8 by default). You can use any Charset you want to have better control over the string-to-bytes conversion, and consequently, better control over the byte array size.
+
 .Using default Charset (UTF-8)
 [source,cs,indent=2]
 ----
 include::src//Nihdi.Common.Pseudonymisation.CodeSamples/PseudonymiseAString.cs[tag=PseudonymizeAString]
 ----
 
-Be.Ict.Reuse
 .Using ISO-88659-1 Charset
 [source,cs,indent=2]
 ----
@@ -441,36 +384,25 @@ The goal is for the REST API to store it in its database so that it can be retur
 For this, the other user must also receive the encryption key.
 The REST API should not be able to decrypt the information, so the encryption key must also be pseudonymised.
 
-.Synchronous cBe.Ict.Reuse
+.Synchronous code
 
 [source,cs,indent=2]
 ----
 include::src//Nihdi.Common.Pseudonymisation.CodeSamples/PseudonymiseAesKey.cs[tag=sync]
 ----
 
-Be.Ict.Reuse
 .Asynchronous code
 [source,cs,indent=2]
 ----
 include::src//Nihdi.Common.Pseudonymisation.CodeSamples/PseudonymiseAesKey.cs[tag=async]
 ----
 
-
-
-
-
-
-
-
-
-
-
 === Pseudonymise multiple SSINs
-Be.Ict.Reuse
+
 .Synchronous code
 [source,cs,indent=2]
 ----
-include::src//Nihdi.Common.Pseudonymisation.CodeSamples/IdentifyASsin.cs[tag=sync]
+include::src//Nihdi.Common.Pseudonymisation.CodeSamples/IdentifyMultipleSsins.cs[tag=sync]
 ----
 
 === Identify an SSIN returned by a REST API

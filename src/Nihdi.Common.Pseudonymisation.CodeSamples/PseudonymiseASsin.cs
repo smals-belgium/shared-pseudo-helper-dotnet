@@ -27,8 +27,7 @@ public class PseudonymiseASsin
         // tag::PseudonymizeSsinSynchronous[]
         var pseudonym =
             _pseudonymisationHelper
-                ?.GetDomain("uhmep_v1")
-                ?.Result
+                .GetDomain("uhmep_v1").Result
                 ?.ValueFactory
                 .From("00000000097")
                 .Pseudonymize().Result;
@@ -38,7 +37,7 @@ public class PseudonymiseASsin
 
     public async Task<IPseudonymInTransit?> Asynchronous()
     {
-        // tag::PseudonymizeSsinAsynchronous[]
+        // tag::PseudonymizeSsinAs
         var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
 
         if (domain == null)
