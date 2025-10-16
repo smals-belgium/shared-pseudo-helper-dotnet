@@ -61,14 +61,16 @@ public class JweDecryptionTests
     }
 
     [TestMethod]
-    [ExpectedException(typeof(NotSupportedException))]
     public void UnwrapKey_WithNonRsaKey_ThrowsNotSupportedException()
     {
         // Arrange
         var symmetricKey = new SymmetricSecurityKey(new byte[32]);
 
-        // Act
-        JweDecryption.UnwrapKey(_encryptedCek, symmetricKey);
+        // Act & Assert
+        var exception = Assert.ThrowsException<NotSupportedException>(() =>
+            JweDecryption.UnwrapKey(_encryptedCek, symmetricKey));
+
+        Assert.AreEqual("Only RSA key unwrapping is supported.", exception.Message);
     }
 
     [TestMethod]
@@ -138,7 +140,6 @@ public class JweDecryptionTests
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
     public void DecryptAesGcm_WithNullAad_ThrowsArgumentNullException()
     {
         // Arrange
@@ -147,12 +148,14 @@ public class JweDecryptionTests
         byte[] ciphertext = new byte[10];
         byte[] authTag = new byte[16];
 
-        // Act
-        JweDecryption.DecryptAesGcm(null!, cek, iv, ciphertext, authTag);
+        // Act & Assert
+        var exception = Assert.ThrowsException<ArgumentNullException>(() =>
+            JweDecryption.DecryptAesGcm(null!, cek, iv, ciphertext, authTag));
+
+        Assert.AreEqual("aad", exception.ParamName);
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
     public void DecryptAesGcm_WithNullCek_ThrowsArgumentNullException()
     {
         // Arrange
@@ -161,12 +164,14 @@ public class JweDecryptionTests
         byte[] ciphertext = new byte[10];
         byte[] authTag = new byte[16];
 
-        // Act
-        JweDecryption.DecryptAesGcm(aad, null!, iv, ciphertext, authTag);
+        // Act & Assert
+        var exception = Assert.ThrowsException<ArgumentNullException>(() =>
+            JweDecryption.DecryptAesGcm(aad, null!, iv, ciphertext, authTag));
+
+        Assert.AreEqual("cek", exception.ParamName);
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
     public void DecryptAesGcm_WithNullIv_ThrowsArgumentNullException()
     {
         // Arrange
@@ -175,12 +180,14 @@ public class JweDecryptionTests
         byte[] ciphertext = new byte[10];
         byte[] authTag = new byte[16];
 
-        // Act
-        JweDecryption.DecryptAesGcm(aad, cek, null!, ciphertext, authTag);
+        // Act & Assert
+        var exception = Assert.ThrowsException<ArgumentNullException>(() =>
+            JweDecryption.DecryptAesGcm(aad, cek, null!, ciphertext, authTag));
+
+        Assert.AreEqual("iv", exception.ParamName);
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
     public void DecryptAesGcm_WithNullCiphertext_ThrowsArgumentNullException()
     {
         // Arrange
@@ -189,12 +196,14 @@ public class JweDecryptionTests
         byte[] iv = new byte[12];
         byte[] authTag = new byte[16];
 
-        // Act
-        JweDecryption.DecryptAesGcm(aad, cek, iv, null!, authTag);
+        // Act & Assert
+        var exception = Assert.ThrowsException<ArgumentNullException>(() =>
+            JweDecryption.DecryptAesGcm(aad, cek, iv, null!, authTag));
+
+        Assert.AreEqual("ciphertext", exception.ParamName);
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
     public void DecryptAesGcm_WithNullAuthTag_ThrowsArgumentNullException()
     {
         // Arrange
@@ -203,12 +212,14 @@ public class JweDecryptionTests
         byte[] iv = new byte[12];
         byte[] ciphertext = new byte[10];
 
-        // Act
-        JweDecryption.DecryptAesGcm(aad, cek, iv, ciphertext, null!);
+        // Act & Assert
+        var exception = Assert.ThrowsException<ArgumentNullException>(() =>
+            JweDecryption.DecryptAesGcm(aad, cek, iv, ciphertext, null!));
+
+        Assert.AreEqual("authTag", exception.ParamName);
     }
 
     [TestMethod]
-    [ExpectedException(typeof(Exception))]
     public void DecryptAesGcm_WithInvalidAuthTag_ThrowsException()
     {
         // Arrange
@@ -226,12 +237,14 @@ public class JweDecryptionTests
             rng.GetBytes(authTag); // Random tag won't match
         }
 
-        // Act
-        JweDecryption.DecryptAesGcm(aad, cek, iv, ciphertext, authTag);
+        // Act & Assert
+        var exception = Assert.ThrowsException<Exception>(() =>
+            JweDecryption.DecryptAesGcm(aad, cek, iv, ciphertext, authTag));
+
+        Assert.AreEqual("AuthenticationException failed: Invalid ciphertext or tag.", exception.Message);
     }
 
     [TestMethod]
-    [ExpectedException(typeof(Exception))]
     public void DecryptAesGcm_WithWrongKey_ThrowsException()
     {
         // Arrange - First encrypt with one key
@@ -263,8 +276,11 @@ public class JweDecryptionTests
         Array.Copy(cipherTextWithTag, 0, ciphertext, 0, ciphertext.Length);
         Array.Copy(cipherTextWithTag, ciphertext.Length, authTag, 0, authTag.Length);
 
-        // Act - Decrypt with wrong key
-        JweDecryption.DecryptAesGcm(aad, wrongCek, iv, ciphertext, authTag);
+        // Act & Assert - Decrypt with wrong key
+        var exception = Assert.ThrowsException<Exception>(() =>
+            JweDecryption.DecryptAesGcm(aad, wrongCek, iv, ciphertext, authTag));
+
+        Assert.AreEqual("AuthenticationException failed: Invalid ciphertext or tag.", exception.Message);
     }
 
     [TestMethod]
@@ -427,7 +443,6 @@ public class JweDecryptionTests
     }
 
     [TestMethod]
-    [ExpectedException(typeof(Exception))]
     public void DecryptAesGcm_WithModifiedAad_ThrowsException()
     {
         // Arrange
@@ -458,8 +473,11 @@ public class JweDecryptionTests
         Array.Copy(cipherTextWithTag, 0, ciphertext, 0, ciphertext.Length);
         Array.Copy(cipherTextWithTag, ciphertext.Length, authTag, 0, authTag.Length);
 
-        // Act - Decrypt with modified AAD (should fail)
-        JweDecryption.DecryptAesGcm(modifiedAad, cek, iv, ciphertext, authTag);
+        // Act & Assert - Decrypt with modified AAD (should fail)
+        var exception = Assert.ThrowsException<Exception>(() =>
+            JweDecryption.DecryptAesGcm(modifiedAad, cek, iv, ciphertext, authTag));
+
+        Assert.AreEqual("AuthenticationException failed: Invalid ciphertext or tag.", exception.Message);
     }
 
     [TestMethod]
