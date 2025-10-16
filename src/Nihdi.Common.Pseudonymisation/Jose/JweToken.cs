@@ -217,7 +217,7 @@ public class JweToken
 
     private byte[] DecryptWithRsa(JsonWebKey jwk, byte[] encryptedKey, RSAEncryptionPadding padding)
     {
-        using (RSA rsa = CreateRsa())
+        using (RSA rsa = RsaHelper.Create())
         {
             rsa.ImportParameters(jwk.ExtractRsaParameters());
 
@@ -264,14 +264,5 @@ public class JweToken
                 Base64UrlEncoder.Encode(protectedHeaderBytes),
                 ".",
                 Base64UrlEncoder.Encode(aad)));
-    }
-
-    private RSA CreateRsa()
-    {
-#if NETFRAMEWORK
-        return new RSACng();
-#else
-        return RSA.Create();
-#endif
     }
 }
