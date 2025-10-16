@@ -205,7 +205,7 @@ public class JsonWebKeyFactoryTests
     }
 
     [TestMethod]
-    public void Create_OctKey_WithoutUse_DefaultsToA256Cm()
+    public void Create_OctKey_WithoutUse_DefaultsToA256Gcm()
     {
         // Arrange
         var jwkJson = @"{
@@ -217,11 +217,11 @@ public class JsonWebKeyFactoryTests
         var jwk = JsonWebKeyFactory.Create(jwkJson);
 
         // Assert
-        Assert.AreEqual("A256CM", jwk.Alg);
+        Assert.AreEqual("A256GCM", jwk.Alg);
     }
 
     [TestMethod]
-    public void Create_OctKey_WithUnknownUse_DefaultsToA256Cm()
+    public void Create_OctKey_WithUnknownUse_DefaultsToA256Gcm()
     {
         // Arrange
         var jwkJson = @"{

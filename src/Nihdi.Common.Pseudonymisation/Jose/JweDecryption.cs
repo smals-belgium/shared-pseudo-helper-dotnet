@@ -27,9 +27,19 @@ public class JweDecryption
     {
         if (key is RsaSecurityKey rsaKey)
         {
-            using (var rsa = RSA.Create())
+            // Always create a new RSA instance using the helper to ensure compatibility
+            using (var rsa = RsaHelper.Create())
             {
-                rsa.ImportParameters(rsaKey.Parameters);
+                // Import parameters from either the RSA instance or the parameters
+                if (rsaKey.Rsa != null)
+                {
+                    rsa.ImportParameters(rsaKey.Rsa.ExportParameters(true));
+                }
+                else
+                {
+                    rsa.ImportParameters(rsaKey.Parameters);
+                }
+
                 return rsa.Decrypt(encryptedCek, RSAEncryptionPadding.OaepSHA256);
             }
         }
