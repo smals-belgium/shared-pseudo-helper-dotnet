@@ -10,6 +10,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.IdentityModel.Tokens;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Parameters;
 
@@ -72,17 +74,23 @@ public class CustomJweHandler
         var headerJson = JsonSerializer.Serialize(jweHeader);
         var headerBase64 = Base64UrlEncoder.Encode(Encoding.UTF8.GetBytes(headerJson));
 
-        // Initialization Vector (12 bytes for GCM)
+        // Generate IV
         byte[] iv = new byte[12];
         using (var rng = RandomNumberGenerator.Create())
         {
             rng.GetBytes(iv);
         }
 
-        // Encrypt the payload using BouncyCastle GCM
+        // Use header as AAD
+        byte[] headerBytes = Encoding.UTF8.GetBytes(headerBase64); // Use Base64 header as AAD
         byte[] plaintext = Encoding.UTF8.GetBytes(payload);
-        GcmBlockCipher gcm = new GcmBlockCipher(new Org.BouncyCastle.Crypto.Engines.AesEngine());
-        AeadParameters parameters = new AeadParameters(new KeyParameter(symmetricKey.Key), 128, iv);
+
+        GcmBlockCipher gcm = new GcmBlockCipher(new AesEngine());
+        AeadParameters parameters = new AeadParameters(
+            new KeyParameter(symmetricKey.Key),
+            128,
+            iv,
+            headerBytes);
 
         gcm.Init(true, parameters);
 
@@ -121,44 +129,72 @@ public class CustomJweHandler
             throw new ArgumentNullException(nameof(encryptingCredentials));
         }
 
-        // Validate algorithm
         if (!string.Equals(encryptingCredentials.Alg, "dir", StringComparison.OrdinalIgnoreCase))
         {
-            throw new NotSupportedException($"Algorithm '{encryptingCredentials.Alg}' is not supported. Only 'dir' is supported in this implementation.");
+            throw new NotSupportedException($"Algorithm '{encryptingCredentials.Alg}' is not supported. Only 'dir' is supported.");
         }
 
-        // Extract symmetric key
-        if (encryptingCredentials.Key is not SymmetricSecurityKey symmetricKey)
+        if (!(encryptingCredentials.Key is SymmetricSecurityKey symmetricKey))
         {
-            throw new ArgumentException("EncryptingCredentials must use a SymmetricSecurityKey for 'dir' encryption.");
+            throw new ArgumentException("Key must be a SymmetricSecurityKey for 'dir' algorithm.");
         }
 
-        // Split the JWE Compact Serialization
-        var parts = jweToken.Split('.');
-        if (parts.Length != 5)
+        try
         {
-            throw new ArgumentException("Invalid JWE token format.");
+            // Split the JWE token
+            var parts = jweToken.Split('.');
+            if (parts.Length != 5)
+            {
+                throw new ArgumentException("Invalid JWE token format.");
+            }
+
+            // ADD: Use header as AAD for verification (must match what was used during encryption)
+            byte[] headerBytes = Encoding.UTF8.GetBytes(parts[0]); // Base64 header as AAD
+            byte[] iv = Base64UrlEncoder.DecodeBytes(parts[2]);
+            byte[] ciphertext = Base64UrlEncoder.DecodeBytes(parts[3]);
+            byte[] tag = Base64UrlEncoder.DecodeBytes(parts[4]);
+
+            // Combine ciphertext and tag for BouncyCastle GCM
+            byte[] combinedCiphertext = new byte[ciphertext.Length + tag.Length];
+            Array.Copy(ciphertext, 0, combinedCiphertext, 0, ciphertext.Length);
+            Array.Copy(tag, 0, combinedCiphertext, ciphertext.Length, tag.Length);
+
+            // Initialize GCM cipher with AAD
+            GcmBlockCipher gcm = new GcmBlockCipher(new AesEngine());
+            AeadParameters parameters = new AeadParameters(
+                new KeyParameter(symmetricKey.Key),
+                128,
+                iv,
+                headerBytes);
+
+            gcm.Init(false, parameters); // false for decryption
+
+            byte[] decryptedData = new byte[gcm.GetOutputSize(combinedCiphertext.Length)];
+            int len = gcm.ProcessBytes(combinedCiphertext, 0, combinedCiphertext.Length, decryptedData, 0);
+            gcm.DoFinal(decryptedData, len);
+
+            // Convert decrypted bytes to string and trim any null characters
+            return Encoding.UTF8.GetString(decryptedData).TrimEnd('\0');
         }
-
-        byte[] iv = Base64UrlEncoder.DecodeBytes(parts[2]);
-        byte[] ciphertext = Base64UrlEncoder.DecodeBytes(parts[3]);
-        byte[] tag = Base64UrlEncoder.DecodeBytes(parts[4]);
-
-        // Combine ciphertext and tag
-        byte[] combinedCiphertext = new byte[ciphertext.Length + tag.Length];
-        Array.Copy(ciphertext, 0, combinedCiphertext, 0, ciphertext.Length);
-        Array.Copy(tag, 0, combinedCiphertext, ciphertext.Length, tag.Length);
-
-        // Decrypt using BouncyCastle
-        GcmBlockCipher gcm = new GcmBlockCipher(new Org.BouncyCastle.Crypto.Engines.AesEngine());
-        AeadParameters parameters = new AeadParameters(new KeyParameter(symmetricKey.Key), 128, iv);
-
-        gcm.Init(false, parameters);
-
-        byte[] decryptedData = new byte[gcm.GetOutputSize(combinedCiphertext.Length)];
-        int len = gcm.ProcessBytes(combinedCiphertext, 0, combinedCiphertext.Length, decryptedData, 0);
-        gcm.DoFinal(decryptedData, len);
-
-        return Encoding.UTF8.GetString(decryptedData).TrimEnd('\0');
+        catch (InvalidCipherTextException ex)
+        {
+            // Wrap BouncyCastle exception in JweDecryptionException
+            throw new JweDecryptionException("Failed to decrypt JWE token. The token may be corrupted or the wrong key was used.", ex);
+        }
+        catch (FormatException ex)
+        {
+            // Base64 decoding failed - this is an invalid token format
+            throw new ArgumentException("Invalid JWE token format. The token contains invalid Base64URL encoding.", ex);
+        }
+        catch (ArgumentException)
+        {
+            // Re-throw ArgumentException as-is (for the parts.Length check)
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // Wrap any other unexpected exceptions
+            throw new JweDecryptionException("Failed to decrypt JWE token.", ex);
+        }
     }
 }

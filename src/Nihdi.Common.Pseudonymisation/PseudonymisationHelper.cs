@@ -1,4 +1,4 @@
-// <copyright file="PseudonymisationHelper.cs" company="Riziv-Inami">
+﻿// <copyright file="PseudonymisationHelper.cs" company="Riziv-Inami">
 // Copyright (c) Riziv-Inami. All rights reserved.
 // </copyright>
 
@@ -211,7 +211,6 @@ public sealed class PseudonymisationHelper
 
         return Base64UrlEncoder.DecodeBytes(input);
     }
-
 
     private Domain CreateDomain(string rawDomain)
     {
