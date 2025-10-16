@@ -234,7 +234,7 @@ public class JsonWebKeyFactoryTests
         var jwk = JsonWebKeyFactory.Create(jwkJson);
 
         // Assert
-        Assert.AreEqual("A256CM", jwk.Alg);
+        Assert.AreEqual("A256GCM", jwk.Alg);
     }
 
     [TestMethod]
