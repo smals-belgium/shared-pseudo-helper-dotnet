@@ -8,11 +8,11 @@ using static Nihdi.Common.Pseudonymisation.CodeSamples.PseudonymisationHelper_In
 
 namespace Nihdi.Common.Pseudonymisation.CodeSamples;
 
-public class IdentifyMultipleSsins
+public class IdentifyMultipleSsinsReturnedByRestAPI
 {
     private PseudonymisationHelper _pseudonymisationHelper;
 
-    public IdentifyMultipleSsins()
+    public IdentifyMultipleSsinsReturnedByRestAPI()
     {
         _pseudonymisationHelper =
             PseudonymisationHelper
@@ -26,7 +26,7 @@ public class IdentifyMultipleSsins
 
     public async Task Asynchronous()
     {
-        // tag::sync[]
+        // tag::async[]
         var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
 
         if (domain == null)
@@ -34,19 +34,22 @@ public class IdentifyMultipleSsins
             throw new InvalidOperationException("domain cannot be null");
         }
 
-        var multiplePseudonymInTransit =
-            domain.ValueFactory
-            .Multiple(
-                new[] { "00000000097", "00000000196", "00000000295" }
-                .Select(ssin => domain.ValueFactory.From(ssin))
-            .ToArray())
-            .Pseudonymize().Result;
+        var factory = domain.PseudonymInTransitFactory;
+        var pseudonymsInTransit = new Collection<IPseudonymInTransit>
+        {
+            factory.FromSec1AndTransitInfo("00000000097"),
+            factory.FromSec1AndTransitInfo("00000000196"),
+            factory.FromSec1AndTransitInfo("00000000295")
+        };
 
-        for (int i = 0; i < multiplePseudonymInTransit.Size(); i++)
+        var multiplePseudonymInTransit = factory.Multiple(pseudonymsInTransit);
+        var multipleValue = await multiplePseudonymInTransit.Identify();
+
+        for (int i = 0; i < multipleValue.Size(); i++)
         {
             try
             {
-                var pseudonymInTransit = multiplePseudonymInTransit[i];
+                var pseudonymInTransit = multipleValue[i];
                 // Add your implementation here
             }
             catch (EHealthProblemException e)
@@ -56,6 +59,6 @@ public class IdentifyMultipleSsins
             }
         }
 
-        // end::sync[]
+        // end::async[]
     }
 }

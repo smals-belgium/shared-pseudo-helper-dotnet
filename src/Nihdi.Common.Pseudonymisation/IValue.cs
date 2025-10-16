@@ -6,7 +6,7 @@ namespace Nihdi.Common.Pseudonymisation;
 
 using System.Text;
 
-// tag:interface[]
+// tag::interface[]
 
 /// <summary>
 /// Wrapper around an elliptic curve point representing a value, that provides useful methods to manipulate it.

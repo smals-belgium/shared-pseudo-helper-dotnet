@@ -6,11 +6,11 @@ using static Nihdi.Common.Pseudonymisation.CodeSamples.PseudonymisationHelper_In
 
 namespace Nihdi.Common.Pseudonymisation.CodeSamples;
 
-public class IdentifyASsin
+public class IdentifyASsinReturnedByRestAPI
 {
     private PseudonymisationHelper _pseudonymisationHelper;
 
-    public IdentifyASsin()
+    public IdentifyASsinReturnedByRestAPI()
     {
         _pseudonymisationHelper =
             PseudonymisationHelper
@@ -27,9 +27,8 @@ public class IdentifyASsin
         // tag::sync[]
         var ssin =
             _pseudonymisationHelper
-            .GetDomain("uhmep_v1")
-            ?.Result
-            ?.PseudonymInTransitFactory
+            .GetDomain("uhmep_v1")?.Result?
+            .PseudonymInTransitFactory
             .FromSec1AndTransitInfo("...")
             .Identify().Result
             .AsString();
