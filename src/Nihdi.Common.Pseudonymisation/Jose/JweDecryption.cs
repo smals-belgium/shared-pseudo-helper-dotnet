@@ -38,7 +38,7 @@ public class JweDecryption
     }
 
     /// <summary>
-    /// Decrypts the ciphertext using AES-CBC.
+    /// Decrypts the ciphertext using AES-GCM.
     /// </summary>
     /// <param name="aad">The additional authenticated data (AAD).</param>
     /// <param name="cek">The Content Encryption Key (CEK).</param>
