@@ -37,9 +37,9 @@ public class IdentifyMultipleSsinsReturnedByRestAPI
         var factory = domain.PseudonymInTransitFactory;
         var pseudonymsInTransit = new Collection<IPseudonymInTransit>
         {
-            factory.FromSec1AndTransitInfo("00000000097"),
-            factory.FromSec1AndTransitInfo("00000000196"),
-            factory.FromSec1AndTransitInfo("00000000295")
+            factory.FromSec1AndTransitInfo("..."),
+            factory.FromSec1AndTransitInfo("..."),
+            factory.FromSec1AndTransitInfo("...")
         };
 
         var multiplePseudonymInTransit = factory.Multiple(pseudonymsInTransit);
