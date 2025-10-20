@@ -9,7 +9,7 @@ namespace Nihdi.Common.Pseudonymisation.CodeSamples;
 public class ResolvePseudoAtRestFromPseudoInTransit
 {
     private readonly IPatientInfoService _patientInfoService;
-    PseudonymisationHelper _pseudonymisationHelper;
+    private PseudonymisationHelper _pseudonymisationHelper;
 
     public ResolvePseudoAtRestFromPseudoInTransit()
     {
@@ -25,10 +25,10 @@ public class ResolvePseudoAtRestFromPseudoInTransit
             .Build()!;
     }
 
-    public async Task Asynchronous()
+    public void Synchronous()
     {
-        // tag::async[]
-        var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
+        // tag::sync[]
+        var domain = _pseudonymisationHelper.GetDomain("uhmep_v1").Result;
 
         if (domain == null)
         {
@@ -36,10 +36,11 @@ public class ResolvePseudoAtRestFromPseudoInTransit
         }
 
         var pseudonymAtRest =
-            domain.PseudonymInTransitFactory
+            domain
+            .PseudonymInTransitFactory
             .FromSec1AndTransitInfo("...")
-            .AtRest()
-            ?.X();
+            .AtRest()?
+            .X();
 
         // We assume patientInfoService is the service that allows you to
         // retrieve information about a patient from your database.
@@ -48,7 +49,7 @@ public class ResolvePseudoAtRestFromPseudoInTransit
 
         var patientInfo = _patientInfoService.GetByPseudonym(pseudonymAtRest);
 
-        // end::async[]
+        // end::sync[]
     }
 }
 

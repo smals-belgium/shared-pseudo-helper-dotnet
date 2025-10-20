@@ -26,21 +26,18 @@ public class ConvertPseudoAtRestToPseudoInTransitOfAnotherDomain
     public void Synchronous()
     {
         // tag::sync[]
-        var domain = _pseudonymisationHelper.GetDomain("uhmep_v1");
+        var domain = _pseudonymisationHelper.GetDomain("uhmep_v1")
+            ?? throw new InvalidOperationException("domain cannot be null");
 
-        if (domain == null)
-        {
-            throw new InvalidOperationException("domain cannot be null");
-        }
 
-        var pseudonym = domain.Result?.PseudonymFactory.FromX("...");
+        var toDomain = _pseudonymisationHelper.GetDomain("ehealth_v1").Result
+            ?? throw new InvalidOperationException("toDomain cannot be null");
 
-        var toDomain = _pseudonymisationHelper.GetDomain("ehealth_v1").Result;
-
-        if (toDomain != null)
-        {
-            var pseudonymInTransit = pseudonym?.ConvertTo(toDomain).Result;
-        }
+        var pseudonymInTransit =
+            domain
+                .Result?
+                .PseudonymFactory.FromX("...")
+                .ConvertTo(toDomain).Result;
 
         // end::sync[]
     }
