@@ -8,7 +8,7 @@ namespace Nihdi.Common.Pseudonymisation.CodeSamples;
 
 public class PseudonymiseASsin
 {
-    PseudonymisationHelper _pseudonymisationHelper;
+    private PseudonymisationHelper _pseudonymisationHelper;
 
     public PseudonymiseASsin()
     {
@@ -37,7 +37,7 @@ public class PseudonymiseASsin
 
     public async Task<IPseudonymInTransit?> Asynchronous()
     {
-        // tag::PseudonymizeSsinAs
+        // tag::PseudonymizeSsinAsyncrhonous[]
         var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
 
         if (domain == null)
