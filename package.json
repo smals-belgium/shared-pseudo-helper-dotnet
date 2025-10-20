@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "convert-docbook": "asciidoctor -r @asciidoctor/docbook-converter -b docbook README.adoc -o README.xml"
+  },
+  "devDependencies": {
+    "@asciidoctor/docbook-converter": "^3.0.0"
+  }
+}

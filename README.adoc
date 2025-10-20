@@ -1,4 +1,4 @@
-= ICT ReUse Pseudonymisation Helper
+= eHealth Pseudonymisation Helper
 :version: 0.1
 :lang: en
 :icons: font
@@ -275,7 +275,7 @@ If, for performance reasons, you also store the Y coordinate in your persistence
 
 [WARNING]
 ====
-If you don't have perfonance issues in computing the Y coodrinate, it is recommanded to only store the X coordinate in your persistence system.
+If you don't have performance issues in computing the Y coorrdinate, it is recommended to only store the X coordinate in your persistence system.
 
 If you decide to store the Y coordinate in your persistence system, you should not define the X-Y pair as a unique identifier: only the X should be used as an identifier because you have no guarantee that the user who will call your API will provide the same Y coordinate you stored in your persistence system.
 ====
@@ -345,13 +345,13 @@ In this example, as a user of a pseudonymised REST API, I want to pseudonymise a
 
 [source,cs,indent=2]
 ----
-include::src//Nihdi.Common.Pseudonymisation.CodeSamples/PseudonymiseASsin.cs[tag=PseudonymizeSsinSynchronous]
+include::src//Nihdi.Common.Pseudonymisation.CodeSamples/PseudonymiseASsin.cs[tag=PseudonymiseSsinSynchronous]
 ----
 Be.Ict.Reuse
 .Asynchronous code
 [source,cs,indent=2]
 ----
-include::src//Nihdi.Common.Pseudonymisation.CodeSamples/PseudonymiseASsin.cs[tag=PseudonymizeSsinAsynchronous]
+include::src//Nihdi.Common.Pseudonymisation.CodeSamples/PseudonymiseASsin.cs[tag=PseudonymiseSsinAsynchronous]
 ----
 
 === Pseudonymise a string
@@ -568,4 +568,15 @@ The values you pseudonymise and the pseudonyms in transit that you convert from 
 * {links-ehealth-doc} documentation
 * https://www.smalsresearch.be/basisprincipes-voor-een-moderne-pseudonimiseringsdienst/[Introductie tot de nieuwe eHealth pseudonimiseringsdienst] /
   https://www.smalsresearch.be/basisprincipes-voor-een-moderne-pseudonimiseringsdienst-2/[Introduction au nouveau service de pseudonymisation eHealth]
-* https://www.smalsresearch.be/download/presentations/20240606_webinar_pseudonimisatie_PRINT.pdf[Privacy in Practice Smart Pseudonymisation]
+* https://www.smalsresearch.be/download/presentations/20240606_webinar_pseudonimisatie_PRINT.pdf[Privacy in Practice Smart Pseudonymisation]
+
+== Dependencies
+
+This project uses the `@asciidoctor/docbook-converter` package to enable conversion of AsciiDoc files to DocBook format. This is required for generating Markdown documentation from AsciiDoc source.
+
+[source,shell]
+----
+npm run convert-docbook
+----
+
+
