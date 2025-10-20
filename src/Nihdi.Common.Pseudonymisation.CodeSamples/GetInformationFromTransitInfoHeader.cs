@@ -8,7 +8,7 @@ namespace Nihdi.Common.Pseudonymisation.CodeSamples;
 
 public class GetInformationFromTransitInfoHeader
 {
-    PseudonymisationHelper _pseudonymisationHelper;
+    private PseudonymisationHelper _pseudonymisationHelper;
 
     public GetInformationFromTransitInfoHeader()
     {
@@ -27,9 +27,8 @@ public class GetInformationFromTransitInfoHeader
         // tag::sync[]
         var pseudonymInTransit =
             _pseudonymisationHelper
-                .GetDomain("uhmep_v1")
-                .Result
-                ?.PseudonymInTransitFactory
+                .GetDomain("uhmep_v1").Result?
+                .PseudonymInTransitFactory
                 .FromSec1AndTransitInfo("...")
                 .GetTransitInfo()
                 .Header()["exp"];

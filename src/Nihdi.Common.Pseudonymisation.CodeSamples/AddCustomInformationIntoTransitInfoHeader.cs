@@ -38,13 +38,11 @@ public class AddCustomInformationIntoTransitInfoHeader
     }
 
     // tag::customizer[]
-    internal class HeaderTransitInfoCustomizer : ITransitInfoCustomizer
+    internal class HeaderTransitInfoCustomizer : TransitInfoCustomizerBase
     {
         private object _jwsCompact = "...";
 
-        public Dictionary<string, object> Header => throw new NotImplementedException();
-
-        public Dictionary<string, object> Payload
+        public override Dictionary<string, object> Header
             => new Dictionary<string, object>() { { "signature", _jwsCompact } };
     }
 

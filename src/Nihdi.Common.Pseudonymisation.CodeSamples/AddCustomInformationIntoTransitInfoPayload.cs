@@ -30,19 +30,17 @@ public class AddCustomInformationIntoTransitInfoPayload
         var pseudonymInTransit =
             _pseudonymisationHelper
                 .GetDomain("uhmep_v1")
-                .Result
-                ?.PseudonymFactory
+                .Result?
+                .PseudonymFactory
                 .FromX("...")
                 .InTransit(transitInfoCustomizer);
         // end::sync[]
     }
 
     // tag::customizer[]
-    internal class PayloadTransitInfoCustomizer : ITransitInfoCustomizer
+    internal class PayloadTransitInfoCustomizer : TransitInfoCustomizerBase
     {
-        public Dictionary<string, object> Header => throw new NotImplementedException();
-
-        public Dictionary<string, object> Payload
+        public override Dictionary<string, object> Payload
             => new Dictionary<string, object>() { { "sub", "test" } };
     }
 

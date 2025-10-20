@@ -435,7 +435,7 @@ Be.Ict.Reuse
 .Synchronous code
 [source,cs,indent=2]
 ----
-include::src//Nihdi.Common.Pseudonymisation.CodeSamples/ResolvePseudoAtRestFromPseudoInTransit.cs[tag=async]
+include::src//Nihdi.Common.Pseudonymisation.CodeSamples/ResolvePseudoAtRestFromPseudoInTransit.cs[tag=sync]
 ----
 
 === Generate a pseudonym in transit from a pseudonym at rest
@@ -445,7 +445,7 @@ Be.Ict.Reuse
 .Synchronous code
 [source,cs,indent=2]
 ----
-include::src//Nihdi.Common.Pseudonymisation.CodeSamples/ResolvePseudoAtRestFromPseudoInTransit.cs[tag=async]
+include::src//Nihdi.Common.Pseudonymisation.CodeSamples/GeneratePseudoInTransitFromPseudoAtRest.cs[tag=sync]
 ----
 
 [NOTE]
@@ -483,17 +483,18 @@ include::src//Nihdi.Common.Pseudonymisation.CodeSamples/ConvertPseudoInTransitTo
 === Add custom information into transitInfo payload
 
 As a REST API, I want to add the `sub` payload property in the transitInfo, to allow the owner of the OAuth token (the subject) to identify the pseudonym in transit I will send to him.
-Be.Ict.Reuse
+
 .Synchronous code
 [source,cs,indent=2]
 ----
 include::src//Nihdi.Common.Pseudonymisation.CodeSamples/AddCustomInformationIntoTransitInfoPayload.cs[tag=sync]
-----Be.Ict.Reuse
+----
 
 [source,cs,indent=2]
 ----
 include::src//Nihdi.Common.Pseudonymisation.CodeSamples/AddCustomInformationIntoTransitInfoPayload.cs[tag=customizer]
 ----
+
 === Add custom information into transitenfo header
 
 As a REST API, I want to add a `signature` header property in the `transitInfo` to allow the caller (and myself, if the caller sends this pseudonym back) to verify that I created this pseudonym.

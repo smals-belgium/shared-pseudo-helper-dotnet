@@ -6,11 +6,11 @@ using static Nihdi.Common.Pseudonymisation.CodeSamples.PseudonymisationHelper_In
 
 namespace Nihdi.Common.Pseudonymisation.CodeSamples;
 
-public class ResolvePseudoInTransitFromPseudoAtRest
+public class GeneratePseudoInTransitFromPseudoAtRest
 {
-    PseudonymisationHelper _pseudonymisationHelper;
+    private PseudonymisationHelper _pseudonymisationHelper;
 
-    public ResolvePseudoInTransitFromPseudoAtRest()
+    public GeneratePseudoInTransitFromPseudoAtRest()
     {
         _pseudonymisationHelper =
             PseudonymisationHelper
@@ -33,8 +33,8 @@ public class ResolvePseudoInTransitFromPseudoAtRest
         }
 
         var pseudonymInTransit =
-            domain.Result
-            ?.PseudonymFactory
+            domain.Result?
+            .PseudonymFactory
             .FromX("...")
             .InTransit()
             .AsString();
