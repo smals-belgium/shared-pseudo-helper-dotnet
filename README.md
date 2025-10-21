@@ -1160,7 +1160,6 @@ Synchronous code
           .GetTransitInfo()
           .Header()["exp"];
 ```
-::::
 
 # Caching 
 
