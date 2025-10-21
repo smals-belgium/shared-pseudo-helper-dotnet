@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "convert-docbook": "npx asciidoctor -r @asciidoctor/docbook-converter -b docbook README.adoc -o temp.xml && pandoc -f docbook -t markdown temp.xml -o README.md && del temp.xml"
+    "convert-docbook": "npx asciidoctor -r @asciidoctor/docbook-converter -b docbook README_template.adoc -o temp.xml && pandoc -f docbook -t markdown temp.xml -o README.md && del temp.xml"
   },
   "devDependencies": {
     "@asciidoctor/docbook-converter": "^3.0.0"

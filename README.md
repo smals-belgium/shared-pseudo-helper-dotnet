@@ -1,235 +1,114 @@
-# Introduction {#_introduction}
+# Introduction
 
-The goal of this document is to describe the ICT ReUse Pseudonymisation
-.NET library, which helps to use the [eHealth Pseudonymisation
-service](https://portal.api.ehealth.fgov.be/api-details?apiId=eb8015c0-693b-4c4f-bab9-f671d35ddc15&managerId=1&Itemid=171&catalogModuleId=120),
-and how to integrate it into your projects.
+The goal of this document is to describe the ICT ReUse Pseudonymisation .NET library, which helps to use the [eHealth Pseudonymisation service](https://portal.api.ehealth.fgov.be/api-details?apiId=eb8015c0-693b-4c4f-bab9-f671d35ddc15&managerId=1&Itemid=171&catalogModuleId=120), and how to integrate it into your projects.
 
 It also helps to understand the different concepts of pseudonymisation.
 
-This document is intended to be useful to everyone, whether you are in a
-functional or technical role.
+This document is intended to be useful to everyone, whether you are in a functional or technical role.
 
-This .NET implementation was developed by RIZIV-INAMI, based on the
-original Java version by Smals.
+This .NET implementation was developed by RIZIV-INAMI, based on the original Java version by Smals.
 
-# Prerequisite {#_prerequisite}
+# Prerequisite
 
-It is strongly recommended to read the [eHealth Pseudonymisation
-service](https://portal.api.ehealth.fgov.be/api-details?apiId=eb8015c0-693b-4c4f-bab9-f671d35ddc15&managerId=1&Itemid=171&catalogModuleId=120)
-documentation before reading this document.
+It is strongly recommended to read the [eHealth Pseudonymisation service](https://portal.api.ehealth.fgov.be/api-details?apiId=eb8015c0-693b-4c4f-bab9-f671d35ddc15&managerId=1&Itemid=171&catalogModuleId=120) documentation before reading this document.
 
-# Definitions {#_definitions}
+# Definitions 
 
 **Identifier**
-
-::: informalexample
-An identifier is a unique code that identifies a citizen without
-requiring additional information. The most common identifier in Belgium
-is the social security number (rijksregisternummer/numéro de registre
-national). The eHealth Pseudonymisation service only exchanges elliptic
-curve points, not identifiers. Each identifier must be converted to an
-elliptic curve point before exchange. Conversely, an elliptic curve
-point must be converted into an identifier before it can be used by the
-user/system.
-:::
+An identifier is a unique code that identifies a citizen without requiring additional information. The most common identifier in Belgium is the social security number (rijksregisternummer/numéro de registre national). The eHealth Pseudonymisation service only exchanges elliptic curve points, not identifiers. Each identifier must be converted to an elliptic curve point before exchange. Conversely, an elliptic curve point must be converted into an identifier before it can be used by the user/system.
 
 **EC point (Elliptic Curve point)**
-
-::: informalexample
-Point on an elliptic curve. The elliptic curve used by the eHealth
-Pseudonymisation service is P-521.
-:::
+Point on an elliptic curve. The elliptic curve used by the eHealth Pseudonymisation service is P-521.
 
 **Blinding**
-
-::: informalexample
-An EC point is \'blinded\' if it has been modified before being sent and
-if it cannot be found or seen by another user/system. Only the
-user/system that blinded the EC point can unblind it, as he is the only
-one who knows how to unblind it. It can be seen as encryption with a
-private single-use key. Blinding an EC point ensures that nobody can map
-an identifier to a pseudonym at rest, or a pseudonym from one domain to
-a pseudonym from another domain.
-:::
+An EC point is \'blinded\' if it has been modified before being sent and if it cannot be found or seen by another user/system. Only the user/system that blinded the EC point can unblind it, as he is the only one who knows how to unblind it. It can be seen as encryption with a private single-use key. Blinding an EC point ensures that nobody can map an identifier to a pseudonym at rest, or a pseudonym from one domain to a pseudonym from another domain.
 
 **Pseudonym (at rest)**
-
-::: informalexample
-A pseudonym is an EC point associated with one citizen in a specific
-domain (see below). Hence, pseudonyms have only local significance. This
-means that a pseudonym does not allow someone to know the real citizen
-behind it without additional information. eHealth converts
-(pseudonymises) an EC point into a pseudonym by applying a complex
-operation on the EC point. This operation is securely done by an HSM
-(Hardware Security Module) that knows which operation to apply to the EC
-points. The HSM is also used to revert the operation: to convert
-(identify) a pseudonym into an EC point. Sensitive data can be linked
-together using this local pseudonym, but it is not sufficient to link
-this data to the real person outside of this domain. Sensitive data must
-of course be encrypted if it contains information that can help to
-identify the real person outside of this domain. A pseudonym enables the
-linkage of records belonging to the same citizen, without the need to
-identify the real citizen behind it. The pseudonym can be stored in a
-database or any secure storage system, but it cannot be exchanged with
-external users/systems.
-:::
+A pseudonym is an EC point associated with one citizen in a specific domain (see below). Hence, pseudonyms have only local significance. This means that a pseudonym does not allow someone to know the real citizen behind it without additional information. eHealth converts (pseudonymises) an EC point into a pseudonym by applying a complex operation on the EC point. This operation is securely done by an HSM (Hardware Security Module) that knows which operation to apply to the EC points. The HSM is also used to revert the operation: to convert (identify) a pseudonym into an EC point. Sensitive data can be linked together using this local pseudonym, but it is not sufficient to link this data to the real person outside of this domain. Sensitive data must of course be encrypted if it contains information that can help to identify the real person outside of this domain. A pseudonym enables the linkage of records belonging to the same citizen, without the need to identify the real citizen behind it. The pseudonym can be stored in a database or any secure storage system, but it cannot be exchanged with external users/systems.
 
 **Pseudonym in transit**
-
-::: informalexample
-A pseudonym in transit is a pseudonym with extra protection layer that
-are only present during transit. By \'transit\', we mean during the
-exchange of this pseudonym from one system/person to another
-system/person.
-:::
+A pseudonym in transit is a pseudonym with extra protection layer that are only present during transit. By \'transit\', we mean during the exchange of this pseudonym from one system/person to another system/person.
 
 **Domain**
+A domain is a set of pseudonymised data, meaning a domain consists of multiple records in the form of pseudonym-data. Each pseudonym is associated with a single domain and has meaning only within that domain. A domain could be a specific backend database or a pseudonymised dataset required for a specific research project. Domains should never overlap. Hence, domains can be thought of as separate islands; on each island, the citizen is known only by their island-specific pseudonym.
 
-::: informalexample
-A domain is a set of pseudonymised data, meaning a domain consists of
-multiple records in the form of pseudonym-data. Each pseudonym is
-associated with a single domain and has meaning only within that domain.
-A domain could be a specific backend database or a pseudonymised dataset
-required for a specific research project. Domains should never overlap.
-Hence, domains can be thought of as separate islands; on each island,
-the citizen is known only by their island-specific pseudonym.
-:::
+# Use case example
+This section aims to explain the use of pseudonymisation in a real use case. It will focus on the manipulation of the patient identifier and the returned data. This means that it will list the operations to apply on the identifier/data, but it will not explain how the library will do it technically.
 
-# Use case example {#_use_case_example}
-
-This section aims to explain the use of pseudonymisation in a real use
-case. It will focus on the manipulation of the patient identifier and
-the returned data. This means that it will list the operations to apply
-on the identifier/data, but it will not explain how the library will do
-it technically.
-
-In this example, a prescriber will consult prescriptions for a patient
-using an integrator software. The back-end (called UHMEP in our example)
-will call an external eHealth service (Attribute Authority) to verify
-the therapeutic relations (therapeutic link + exclusion) to determine if
-the prescriptions can be returned. Once this check is done, the
-prescriptions will be returned to the prescriber. An explanatory text of
-the diagram is present just after it.
+In this example, a prescriber will consult prescriptions for a patient using an integrator software. The back-end (called UHMEP in our example) will call an external eHealth service (Attribute Authority) to verify the therapeutic relations (therapeutic link + exclusion) to determine if the prescriptions can be returned. Once this check is done, the prescriptions will be returned to the prescriber. An explanatory text of the diagram is present just after it.
 
 ![](doc/images/use-case-1.png){alt="use case 1"}
 
 1-2
 
-:   The patient identifier cannot be given to the back-end application.
-    The integrator software will then use the library to pseudonymise
-    the identifier, which is the Belgian Social Security Identification
-    Number (SSIN), into a pseudonym in transit for the domain of the
-    targeted back-end (UHMEP API in this case).
+:   The patient identifier cannot be given to the back-end application. The integrator software will then use the library to pseudonymise the identifier, which is the Belgian Social Security Identification Number (SSIN), into a pseudonym in transit for the domain of the targeted back-end (UHMEP API in this case).
 
 3-8
 
-:   The library will convert this identifier to a point on the elliptic
-    curve (EC point), blind this EC point, and call the `pseudonymize`
-    operation of the eHealth Pseudonymisation service. The response will
-    be unblinded and returned to the software. Blinding is necessary for
-    each call to the eHealth Pseudonymisation service to prevent this
-    service from seeing any kind of patient identifier (SSIN, pseudonym
-    at rest).
+:   The library will convert this identifier to a point on the elliptic curve (EC point), blind this EC point, and call the pseudonymize` operation of the eHealth Pseudonymisation service. The response will be unblinded and returned to the software. Blinding is necessary for each call to the eHealth Pseudonymisation service to prevent this service from seeing any kind of patient identifier (SSIN, pseudonym at rest).
 
 9
 
-:   The pseudonym in transit returned by the library can be used to
-    request prescriptions from the back-end.
+:   The pseudonym in transit returned by the library can be used to request prescriptions from the back-end.
 
 10
 
-:   This pseudonym in transit will be decrypted by the back-end to
-    remove the protection layer present during data exchange. The result
-    of this decryption is called the pseudonym at rest, which will be
-    stored in the back-end database. This pseudonym at rest will always
-    be the same if the patient identifier is the same, which is not the
-    case for the pseudonym in transit: it will always be different.
+:   This pseudonym in transit will be decrypted by the back-end to remove the protection layer present during data exchange. The result of this decryption is called the pseudonym at rest, which will be stored in the back-end database. This pseudonym at rest will always be the same if the patient identifier is the same, which is not the case for the pseudonym in transit: it will always be different.
 
 11-17
 
-:   This pseudonym at rest can be used to retrieve the patient's
-    prescriptions, but first, the back-end needs to verify if those
-    prescriptions can be consulted by the prescriber by checking the
-    therapeutic relations. To do this, the back-end must call an
-    external eHealth service and communicate for which patient the
-    verification must be done. This will be done by providing a
-    pseudonym in transit for the domain \"eHealth\". To obtain this
-    pseudonym, the back-end converts its pseudonym at rest to a
-    pseudonym in transit for eHealth. Once the verification is done, the
-    back-end can return the prescriptions with a new pseudonym in
-    transit for the patient information (by encrypting the pseudonym at
-    rest).
+:   This pseudonym at rest can be used to retrieve the patient's prescriptions, but first, the back-end needs to verify if those prescriptions can be consulted by the prescriber by checking the therapeutic relations. To do this, the back-end must call an external eHealth service and communicate for which patient the verification must be done. This will be done by providing a pseudonym in transit for the domain \"eHealth\". To obtain this pseudonym, the back-end converts its pseudonym at rest to a pseudonym in transit for eHealth. Once the verification is done, the back-end can return the prescriptions with a new pseudonym i transit for the patient information (by encrypting the pseudonym at rest).
 
 18
 
-:   The integrator software can use the library to link this pseudonym
-    in transit to the original identifier. In this case, this last call
-    is not necessary but will be if the prescriber consults
-    prescriptions he created and then receives prescriptions for many
-    patients.
+:   The integrator software can use the library to link this pseudonym in transit to the original identifier. In this case, this last call is not necessary but will be if the prescriber consults prescriptions he created and then receives prescriptions for many patients.
 
-# Nuget Package {#_nuget_package}
+# Nuget Package
 
-To use the library in your project, you need to add the Nuget package
-`Nihdi.Common.Pseudonymisation`. The package is available on Nuget.org:
-<https://www.nuget.org/packages/Nihdi.Common.Pseudonymisation/>.
+To use the library in your project, you need to add the Nuget package `Nihdi.Common.Pseudonymisation`. The package is available on Nuget.org: <https://www.nuget.org/packages/Nihdi.Common.Pseudonymisation/>.
 
-# Initialization PseudonymisationHelper {#_initialization_pseudonymisationhelper}
+# Initialization PseudonymisationHelper
 
-PseudonymisationHelper is initialized using a builder which requires
-specific parameters to be provided. This guide outlines the steps and
-parameters needed for a successful initialization.
+PseudonymisationHelper is initialized using a builder which requires specific parameters to be provided. This guide outlines the steps and parameters needed for a successful initialization.
 
 **Parameters**
 
 Ensure that you have the required parameters for initialization:
 
-+----------------------------+------------------------------+---------------------------+
-| Name                       | Type                         | Description               |
-+============================+==============================+===========================+
-| **pseudonymisationClient** | `IPseudonymisationClient`    | The                       |
-|                            |                              | `IPseudonymisationClient` |
-|                            |                              | interface used to make    |
-|                            |                              | calls to eHealth          |
-|                            |                              | Pseudonymisation service. |
-+----------------------------+------------------------------+---------------------------+
-| jwksUrl                    | `Uri`                        | The JSON Web Key Set URL  |
-|                            |                              | used by eHealth           |
-|                            |                              | Pseudonymisation service  |
-|                            |                              | to encrypt the domaim     |
-|                            |                              | secret keys. It **must**  |
-|                            |                              | be exactly the URL        |
-|                            |                              | defined in eHealth        |
-|                            |                              | Pseudonymisation service. |
-|                            |                              |                           |
-|                            |                              | :::: tip                  |
-|                            |                              | ::: title                 |
-|                            |                              | :::                       |
-|                            |                              |                           |
-|                            |                              | If you are not sure about |
-|                            |                              | the URL referenced in     |
-|                            |                              | eHealth Pseudonymisation  |
-|                            |                              | service, you can use your |
-|                            |                              | `PseudonymisationClient`  |
-|                            |                              | to retrieve your domain,  |
-|                            |                              | and check your JSON Web   |
-|                            |                              | Key Set URL.              |
-|                            |                              | ::::                      |
-+----------------------------+------------------------------+---------------------------+
-| jwksSupplier               | `Func<Task<string>>?`        | A Supplier of the JSon    |
-|                            |                              | Web Key Set (as String)   |
-|                            |                              | pointed by `jwksUrl`.     |
-+----------------------------+------------------------------+---------------------------+
-| privateKeySupplier         | `Func<string, Task<string>>` | A function supplying the  |
-|                            |                              | private keys that are     |
-|                            |                              | defined in the JWKS       |
-|                            |                              | supplied by jwksSupplier. |
-+----------------------------+------------------------------+---------------------------+
+- **Name**: **pseudonymisationClient**
 
-:::: tip
-::: title
-:::
+  - **Type**: `IPseudonymisationClient`
+
+  - **Description**: The `IPseudonymisationClient` interface used to
+    make calls to eHealth Pseudonymisation service.
+
+- **Name**: **jwksUrl**
+
+  - **Type**: `Uri`
+
+  - **Description**: The JSON Web Key Set URL used by eHealth
+    Pseudonymisation service to encrypt the domain secret keys. It
+    **must** be exactly the URL defined in eHealth Pseudonymisation
+    service.
+
+If you are not sure about the URL referenced in eHealth Pseudonymisation
+service, you can use your `PseudonymisationClient` to retrieve your
+domain, and check your JSON Web Key Set URL.
+
+- **Name**: **jwksSupplier**
+
+  - **Type**: `Func<Task<string>>?`
+
+  - **Description**: A supplier of the JSON Web Key Set (as String)
+    pointed by `jwksUrl`.
+
+- **Name**: **privateKeySupplier**
+
+  - **Type**: `Func<string, Task<string>>`
+
+  - **Description**: A function supplying the private keys that are
+    defined in the JWKS supplied by `jwksSupplier`.
+
 
 Only `pseudonymisationClient` is mandatory in all use cases.
 
@@ -239,14 +118,10 @@ provide `jwksUrl`, `jwksSupplier` and `privateKeySupplier`.
 
 For example, the software of a physician only needs to provide
 `pseudonymisationClient`.
-::::
 
 **Code snippet**
 
-:::: formalpara
-::: title
 PseudonymizationHelper initialization example
-:::
 
 ``` cs
         var helper =
@@ -257,7 +132,6 @@ PseudonymizationHelper initialization example
             .PrivateKeySupplier(domainKey => "...")
             .Build();
 ```
-::::
 
 ``` cs
     public class PseudonymisationClient : IPseudonymisationClient
@@ -299,20 +173,9 @@ PseudonymizationHelper initialization example
     }
 ```
 
-:::: tip
-::: title
-:::
+You only have to implement the methods of PseudonymisationClient that you really need. If you only need to pseudonymise and identify single values, then you only have to implement identify() and pseudonymize(). The only method that is mandatory is getDomain().
 
-You only have to implement the methods of PseudonymisationClient that
-you really need. If you only need to pseudonymise and identify single
-values, then you only have to implement identify() and pseudonymize().
-The only method that is mandatory is getDomain().
-::::
-
-:::: example
-::: title
 Methods of IPseudonymizationClient
-:::
 
 ``` cs
     /// <summary>
@@ -381,10 +244,8 @@ Methods of IPseudonymizationClient
     /// <returns>The response as a string.</returns>
     Task<string> ConvertMultipleTo(string fromDomainKey, string toDomainKey, string payload);
 ```
-::::
 
-# Explanation of PseudonymisationHelper {#_explanation_of_pseudonymisationhelper}
-
+# Explanation of PseudonymisationHelper
 `PseudonymisationHelper` primarily provides `IDomain` instances, which
 are essentially sets of factories that allow you to create different
 objects you can manipulate to apply pseudonymisation operations.
@@ -395,20 +256,12 @@ The first step after the initialization is to retrieve a domain.
 constructor to call eHealth Pseudonymisation service. This call is
 asynchronous and that's why it returns a `Task<string>`.
 
-:::: tip
-::: title
-:::
-
 Your `PseudonmymisationClient` must call eHealth Pseudonymisation
 service for the domains you need to encrypt/decrypt transitInfo. For the
 other domains, your `PseudonmymisationClient` should return a hardcoded
 representation of the domain.
-::::
 
-:::: example
-::: title
 Example with hardcoded `ehealth_v1` domain
-:::
 
 ``` cs
 public class MyPseudonymisationClient : IPseudonymisationClient
@@ -431,30 +284,22 @@ public class MyPseudonymisationClient : IPseudonymisationClient
         throw new ArgumentException($"Could not find domain {domainKey}");
     }
 ```
-::::
 
-:::: example
-::: title
 Example that retrieve the `uhmep_v1` domain
-:::
 
 ``` cs
         IDomain? domain = await pseudonymisationHelper.GetDomain("uhmep_v1");
 ```
-::::
 
 Main classes used by the library as parameter or return types are
 described bellow.
 
-## Domain {#_domain_2}
+## Domain 
 
 The Domain object represents your or a foreign Domain. The object
 contains methods to access to the factory.
 
-:::: formalpara
-::: title
 Methods
-:::
 
 ``` cs
 /// <summary>
@@ -510,22 +355,16 @@ public interface IDomain
     }
 }
 ```
-::::
 
-## ValueFactory {#_valuefactory}
+## ValueFactory 
 
 The ValueFactory allows the creation of `Value` objects, such as a clear
 identifier to be pseudonymised. It serves as the entry point to
 pseudonymise an identifier or a string, or as the output when a
 pseudonym is identified (de-pseudonymised).
 
-:::: important
-::: title
-:::
-
 Even though it is technically possible to have values longer than 32
 bytes, eHealth requires that this 32-byte limit is not exceeded.
-::::
 
 ``` cs
 /// <summary>
@@ -567,7 +406,7 @@ public interface IValue : IPoint
 }
 ```
 
-## PseudonymFactory {#_pseudonymfactory}
+## PseudonymFactory 
 
 The PseudonymFactory is responsible for creating Pseudonym objects from
 points on the curve X and Y. If the point is invalid then
@@ -581,10 +420,6 @@ system, then you can also provide it to the PseudonymFactory: this will
 avoid computing the Y coordinate and will save a substantial amount of
 CPU resources.
 
-:::: warning
-::: title
-:::
-
 If you don't have performance issues in computing the Y coorrdinate, it
 is recommended to only store the X coordinate in your persistence
 system.
@@ -594,7 +429,6 @@ should not define the X-Y pair as a unique identifier: only the X should
 be used as an identifier because you have no guarantee that the user who
 will call your API will provide the same Y coordinate you stored in your
 persistence system.
-::::
 
 ``` cs
 /// <summary>
@@ -636,7 +470,7 @@ public interface IValue : IPoint
 }
 ```
 
-## PseudonymInTransitFactory {#_pseudonymintransitfactory}
+## PseudonymInTransitFactory 
 
 This factory allows to create PseudonymInTransit objects from a
 pseudonym and a transitInfo.
@@ -699,7 +533,7 @@ public interface IPseudonymInTransitFactory
 }
 ```
 
-## Value {#_value}
+## Value 
 
 A Value object represents a clear identifier, this object allows to
 pseudonymize an identifier.
@@ -744,7 +578,7 @@ public interface IValue : IPoint
 }
 ```
 
-## Pseudonym {#_pseudonym}
+## Pseudonym 
 
 A Pseudonym object represents a point X and Y in a curve.
 
@@ -796,7 +630,7 @@ public interface IPseudonym : IPoint
 }
 ```
 
-## TransitInfo {#_transitinfo}
+## TransitInfo 
 
 A TransitInfo object represents the JWECompact transitInfo.
 
@@ -848,7 +682,7 @@ public interface IPseudonym : IPoint
 }
 ```
 
-## PseudonymInTransit {#_pseudonymintransit}
+## PseudonymInTransit
 
 A PseudonymInTransit object represents a pseudonymInTransit that
 contains a Pseudonym and TransitInfo objects.
@@ -929,7 +763,7 @@ public interface IPseudonymInTransit : IPoint
 }
 ```
 
-# Use of PseudonymisationHelper in real use cases {#_use_of_pseudonymisationhelper_in_real_use_cases}
+# Use of PseudonymisationHelper in real use cases 
 
 These examples demonstrate how to use PseudonymisationHelper for common
 use cases.
@@ -938,15 +772,12 @@ Most of the use cases can be done synchronously or asynchronously. To
 avoid writing too much code here, we will provide few examples in both
 synchronous and asynchronous ways.
 
-## Pseudonymise an SSIN {#_pseudonymise_an_ssin}
+## Pseudonymise an SSIN 
 
 In this example, as a user of a pseudonymised REST API, I want to
 pseudonymise a citizen's SSIN before sending my request to the REST API.
 
-:::: formalpara
-::: title
 Synchronous code
-:::
 
 ``` cs
   var pseudonym =
@@ -958,7 +789,7 @@ Synchronous code
 ```
 ::::
 
-Be.Ict.Reuse .Asynchronous code
+Asynchronous code
 
 ``` cs
   var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
@@ -973,19 +804,11 @@ Be.Ict.Reuse .Asynchronous code
           .Pseudonymize();
 ```
 
-## Pseudonymise a string {#_pseudonymise_a_string}
+## Pseudonymise a string 
 
-eHealth asks not to pseudonymise values that exceed 32 bytes. Depending
-on the encoding, 32 bytes does not mean 32 characters. `ValueFactory`
-first converts the string into a byte\[\] using the given `Charset`
-(UTF-8 by default). You can use any Charset you want to have better
-control over the string-to-bytes conversion, and consequently, better
-control over the byte array size.
+eHealth asks not to pseudonymise values that exceed 32 bytes. Depending on the encoding, 32 bytes does not mean 32 characters. `ValueFactory` first converts the string into a byte\[\] using the given `Charset` (UTF-8 by default). You can use any Charset you want to have better control over the string-to-bytes conversion, and consequently, better control over the byte array size.
 
-:::: formalpara
-::: title
 Using default Charset (UTF-8)
-:::
 
 ``` cs
   var pseudonym =
@@ -996,12 +819,7 @@ Using default Charset (UTF-8)
           .From("Cédric Dupont")
           .Pseudonymize().Result;
 ```
-::::
-
-:::: formalpara
-::: title
 Using ISO-88659-1 Charset
-:::
 
 ``` cs
   var pseudonym =
@@ -1013,17 +831,13 @@ Using ISO-88659-1 Charset
           .Pseudonymize()
           .Result;
 ```
-::::
 
-:::: note
-::: title
-:::
+**Note**
 
 In the first example, the byte array length will be 14; in the second
 one, it will be 13.
-::::
 
-## Pseudonymise an AES encryption key {#_pseudonymise_an_aes_encryption_key}
+## Pseudonymise an AES encryption key 
 
 In some use cases, we have to encrypt sensitive data before sending it
 to a REST API. The goal is for the REST API to store it in its database
@@ -1032,10 +846,7 @@ the other user must also receive the encryption key. The REST API should
 not be able to decrypt the information, so the encryption key must also
 be pseudonymised.
 
-:::: formalpara
-::: title
 Synchronous code
-:::
 
 ``` cs
   byte[] secretKey = GeneraSecretKey(32);
@@ -1049,12 +860,8 @@ Synchronous code
           .From(base64UrlEncodedKey)
           .Pseudonymize().Result;
 ```
-::::
 
-:::: formalpara
-::: title
 Asynchronous code
-:::
 
 ``` cs
   byte[] secretKey = GeneraSecretKey(32);
@@ -1070,14 +877,10 @@ Asynchronous code
           .Pseudonymize();
   }
 ```
-::::
 
-## Pseudonymise multiple SSINs {#_pseudonymise_multiple_ssins}
+## Pseudonymise multiple SSINs 
 
-:::: formalpara
-::: title
 Synchronous code
-:::
 
 ``` cs
   var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
@@ -1109,17 +912,12 @@ Synchronous code
       }
   }
 ```
-::::
 
-## Identify an SSIN returned by a REST API {#_identify_an_ssin_returned_by_a_rest_api}
+## Identify an SSIN returned by a REST API 
 
-As a user of a REST API, I want to identify (de-pseudonymise) the SSIN
-the REST API sent to me.
+As a user of a REST API, I want to identify (de-pseudonymise) the SSIN the REST API sent to me.
 
-:::: formalpara
-::: title
 Synchronous code
-:::
 
 ``` cs
   var ssin =
@@ -1130,12 +928,8 @@ Synchronous code
       .Identify().Result
       .AsString();
 ```
-::::
 
-:::: formalpara
-::: title
 Asynchronous code
-:::
 
 ``` cs
   var domain =
@@ -1153,14 +947,9 @@ Asynchronous code
 
   var ssin = value.AsString();
 ```
-::::
+## Identify multiple SSINs returned by a REST API 
 
-## Identify multiple SSINs returned by a REST API {#_identify_multiple_ssins_returned_by_a_rest_api}
-
-:::: formalpara
-::: title
 Asynchronous code
-:::
 
 ``` cs
   var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
@@ -1195,14 +984,12 @@ Asynchronous code
       }
   }
 ```
-::::
 
-## Resolve a pseudonym at rest from a pseudonym in transit {#_resolve_a_pseudonym_at_rest_from_a_pseudonym_in_transit}
+## Resolve a pseudonym at rest from a pseudonym in transit 
 
-As a REST API, I want to get the pseudonym at rest (always the same for
-a citizen in a pseusonymisation domain) from a pseudonym in transit to
-find information about a citizen in my database. Be.Ict.Reuse
-.Synchronous code
+As a REST API, I want to get the pseudonym at rest (always the same for a citizen in a pseusonymisation domain) from a pseudonym in transit to find information about a citizen in my database.
+
+Synchronous code
 
 ``` cs
   var domain = _pseudonymisationHelper.GetDomain("uhmep_v1").Result;
@@ -1227,10 +1014,11 @@ find information about a citizen in my database. Be.Ict.Reuse
   var patientInfo = _patientInfoService.GetByPseudonym(pseudonymAtRest);
 ```
 
-## Generate a pseudonym in transit from a pseudonym at rest {#_generate_a_pseudonym_in_transit_from_a_pseudonym_at_rest}
+## Generate a pseudonym in transit from a pseudonym at rest 
 
-As a REST API, I want to pseudonymise a citizen's SSIN before to send it
-to my user. Be.Ict.Reuse .Synchronous code
+As a REST API, I want to pseudonymise a citizen's SSIN before to send it to my user.
+
+Synchronous code
 
 ``` cs
   var domain = _pseudonymisationHelper.GetDomain("uhmep_v1");
@@ -1247,26 +1035,13 @@ to my user. Be.Ict.Reuse .Synchronous code
       .InTransit()
       .AsString();
 ```
+Due to potential clock desynchronization, the library permits the use of a pseudonym that has expired within the last minute (i.e., when the `exp` is reached). After this period, the pseudonym in transit will no longer be usable.
 
-:::: note
-::: title
-:::
+## Convert a pseudonym at rest to a pseudonym in transit of another domain 
 
-Due to potential clock desynchronization, the library permits the use of
-a pseudonym that has expired within the last minute (i.e., when the
-`exp` is reached). After this period, the pseudonym in transit will no
-longer be usable.
-::::
+As a REST API, I want to convert a pseudonym of my domain in a pseudodym in transit of another domain before to send it to a REST API that uses this other domain.
 
-## Convert a pseudonym at rest to a pseudonym in transit of another domain {#_convert_a_pseudonym_at_rest_to_a_pseudonym_in_transit_of_another_domain}
-
-As a REST API, I want to convert a pseudonym of my domain in a pseudodym
-in transit of another domain before to send it to a REST API that uses
-this other domain.
-
-In the following example, the pseudonym at rest from the domain
-`uhmep_v1` will be converted into a pseudonym in transit of the domain
-`ehealth_v1`. Be.Ict.Reuse .Synchronous code
+In the following example, the pseudonym at rest from the domain `uhmep_v1` will be converted into a pseudonym in transit of the domain `ehealth_v1`. Be.Ict.Reuse .Synchronous code
 
 ``` cs
   var domain = _pseudonymisationHelper.GetDomain("uhmep_v1")
@@ -1283,16 +1058,11 @@ In the following example, the pseudonym at rest from the domain
           .ConvertTo(toDomain).Result;
 ```
 
-## Convert a pseudonym in transit to a pseudonym in transit of another domain {#_convert_a_pseudonym_in_transit_to_a_pseudonym_in_transit_of_another_domain}
+## Convert a pseudonym in transit to a pseudonym in transit of another domain 
 
-As a REST API, I want to convert a pseudonym in transit of the domain
-`ehealth_v1` to a pseudonym in transit of the domain `uhmep_v1` (my
-domain).
+As a REST API, I want to convert a pseudonym in transit of the domain `ehealth_v1` to a pseudonym in transit of the domain `uhmep_v1` (my domain).
 
-:::: formalpara
-::: title
-Synchronous cBe.Ict.Reuse
-:::
+Synchronous
 
 ``` cs
   var domain = _pseudonymisationHelper.GetDomain("uhmep_v1")
@@ -1308,18 +1078,12 @@ Synchronous cBe.Ict.Reuse
       .FromSec1AndTransitInfo("...")
       .ConvertTo(toDomain);
 ```
-::::
 
-## Add custom information into transitInfo payload {#_add_custom_information_into_transitinfo_payload}
+## Add custom information into transitInfo payload 
 
-As a REST API, I want to add the `sub` payload property in the
-transitInfo, to allow the owner of the OAuth token (the subject) to
-identify the pseudonym in transit I will send to him.
+As a REST API, I want to add the `sub` payload property in the transitInfo, to allow the owner of the OAuth token (the subject) to identify the pseudonym in transit I will send to him.
 
-:::: formalpara
-::: title
 Synchronous code
-:::
 
 ``` cs
   var transitInfoCustomizer = new PayloadTransitInfoCustomizer();
@@ -1332,7 +1096,6 @@ Synchronous code
           .FromX("...")
           .InTransit(transitInfoCustomizer);
 ```
-::::
 
 ``` cs
   internal class PayloadTransitInfoCustomizer : TransitInfoCustomizerBase
@@ -1342,24 +1105,16 @@ Synchronous code
   }
 ```
 
-## Add custom information into transitenfo header {#_add_custom_information_into_transitenfo_header}
+## Add custom information into transitenfo header 
 
-As a REST API, I want to add a `signature` header property in the
-`transitInfo` to allow the caller (and myself, if the caller sends this
-pseudonym back) to verify that I created this pseudonym.
+As a REST API, I want to add a `signature` header property in the `transitInfo` to allow the caller (and myself, if the caller sends this pseudonym back) to verify that I created this pseudonym.
 
-:::: note
-::: title
-:::
+Note
 
 This is a hypothetzcuical example; there is no apparent need to sign a
 `transitInfo`.
-::::
 
-:::: formalpara
-::: title
 Synchronous code
-:::
 
 ``` cs
   var transitInfoCustomizer = new PayloadTransitInfoCustomizer();
@@ -1372,7 +1127,6 @@ Synchronous code
           .FromX("...")
           .InTransit(transitInfoCustomizer);
 ```
-::::
 
 ``` cs
   internal class PayloadTransitInfoCustomizer : TransitInfoCustomizerBase
@@ -1382,36 +1136,20 @@ Synchronous code
   }
 ```
 
-:::::: note
-::: title
-:::
+Note
 
-Please be aware that the headers managed by the library cannot be
-overridden. If you attempt to set them using a `TransitInfoCustomizer`,
-they will be ignored.
+Please be aware that the headers managed by the library cannot be overridden. If you attempt to set them using a `TransitInfoCustomizer`, they will be ignored.
 
-:::: {}
-::: title
-List of headers managed by the library
-:::
-
+List of headers managed by the library :
 - aud
-
 - exp
-
 - iat
-::::
-::::::
 
-## Get information from transitInfo header {#_get_information_from_transitinfo_header}
+## Get information from transitInfo header 
 
-As a client of a REST API, I want to get the `exp` header property in
-the transitInfo to know when the pseudonym in transit will expire.
+As a client of a REST API, I want to get the `exp` header property in the transitInfo to know when the pseudonym in transit will expire.
 
-:::: formalpara
-::: title
 Synchronous code
-:::
 
 ``` cs
   var pseudonymInTransit =
@@ -1422,74 +1160,36 @@ Synchronous code
           .GetTransitInfo()
           .Header()["exp"];
 ```
-::::
 
-# Caching {#_caching}
+# Caching 
 
-To prevent resource waste, it is crucial for eHealth that all users of
-the Pseudonymisation service cache the pseudonyms in transit that they
-create and the pseudonyms in transit that they identify or convert.
+To prevent resource waste, it is crucial for eHealth that all users of the Pseudonymisation service cache the pseudonyms in transit that they create and the pseudonyms in transit that they identify or convert.
 
-Each domain defines a `ttl` (Time To Live) for the pseudonyms in
-transit, specifying the number of seconds each pseudonym in transit can
-be used. All domain owners must calculate the `exp` header and the `exp`
-payload property of the pseudonyms in transit they create, based on the
-`ttl` defined in their domain.
+Each domain defines a `ttl` (Time To Live) for the pseudonyms in transit, specifying the number of seconds each pseudonym in transit can be used. All domain owners must calculate the `exp` header and the `exp` payload property of the pseudonyms in transit they create, based on the `ttl` defined in their domain.
 
-## As owner of a domain {#_as_owner_of_a_domain}
+## As owner of a domain 
 
-As owner of a domain, EHealth requires you to cache the pseudonyms in
-transit you create.
+As owner of a domain, EHealth requires you to cache the pseudonyms in transit you create.
 
-Please note that the library does not manage caching; this
-responsibility falls on you.
+Please note that the library does not manage caching; this responsibility falls on you.
 
-The pseudonyms in transit you create should be reused until they expire.
-To prevent the recipient from being unable to use the pseudonyms, it is
-recommended not to send them once their remaining lifespan is less than
-30 seconds.
+The pseudonyms in transit you create should be reused until they expire. To prevent the recipient from being unable to use the pseudonyms, it is recommended not to send them once their remaining lifespan is less than 30 seconds.
 
-:::: important
-::: title
-:::
+Please note that if your pseudonyms in transit are specific to individual users (i.e., if their `transitInfo` contains the `sub` property), your cache must account for this, and you should not reuse those pseudonyms in transit for other users.
 
-Please note that if your pseudonyms in transit are specific to
-individual users (i.e., if their `transitInfo` contains the `sub`
-property), your cache must account for this, and you should not reuse
-those pseudonyms in transit for other users.
-::::
+## As a client of a domain
 
-## As a client of a domain {#_as_a_client_of_a_domain}
+As a client of a domain, eHealth requires you to cache the identified and converted pseudonyms in transit that you receive.
 
-As a client of a domain, eHealth requires you to cache the identified
-and converted pseudonyms in transit that you receive.
+Please note that the library does not manage caching; this responsibility falls on you.
 
-Please note that the library does not manage caching; this
-responsibility falls on you.
+The values you pseudonymise and the pseudonyms in transit that you convert from one domain to another should be reused until they expire.
 
-The values you pseudonymise and the pseudonyms in transit that you
-convert from one domain to another should be reused until they expire.
+# References 
 
-# References {#_references}
+- [eHealth Pseudonymisation service](https://portal.api.ehealth.fgov.be/api-details?apiId=eb8015c0-693b-4c4f-bab9-f671d35ddc15&managerId=1&Itemid=171&catalogModuleId=120) documentation
 
-- [eHealth Pseudonymisation
-  service](https://portal.api.ehealth.fgov.be/api-details?apiId=eb8015c0-693b-4c4f-bab9-f671d35ddc15&managerId=1&Itemid=171&catalogModuleId=120)
-  documentation
+- [Introductie tot de nieuwe eHealth pseudonimiseringsdienst](https://www.smalsresearch.be/basisprincipes-voor-een-moderne-pseudonimiseringsdienst/) /
+[Introduction au nouveau service de pseudonymisation eHealth](https://www.smalsresearch.be/basisprincipes-voor-een-moderne-pseudonimiseringsdienst-2/)
 
-- [Introductie tot de nieuwe eHealth
-  pseudonimiseringsdienst](https://www.smalsresearch.be/basisprincipes-voor-een-moderne-pseudonimiseringsdienst/)
-  / [Introduction au nouveau service de pseudonymisation
-  eHealth](https://www.smalsresearch.be/basisprincipes-voor-een-moderne-pseudonimiseringsdienst-2/)
-
-- [Privacy in Practice Smart
-  Pseudonymisation](https://www.smalsresearch.be/download/presentations/20240606_webinar_pseudonimisatie_PRINT.pdf)
-
-# Dependencies {#_dependencies}
-
-This project uses the `@asciidoctor/docbook-converter` package to enable
-conversion of AsciiDoc files to DocBook format. This is required for
-generating Markdown documentation from AsciiDoc source.
-
-``` shell
-npm run convert-docbook
-```
+- [Privacy in Practice Smart Pseudonymisation](https://www.smalsresearch.be/download/presentations/20240606_webinar_pseudonimisatie_PRINT.pdf)
