@@ -157,7 +157,7 @@ Ensure that you have the required parameters for initialization:
 ** **Type**: `Uri`
 ** **Description**: The JSON Web Key Set URL used by eHealth Pseudonymisation service to encrypt the domain secret keys. It **must** be exactly the URL defined in eHealth Pseudonymisation service.
 
-TIP: If you are not sure about the URL referenced in eHealth Pseudonymisation service, you can use your `PseudonymisationClient` to retrieve your domain, and check your JSON Web Key Set URL.
+  TIP: If you are not sure about the URL referenced in the eHealth Pseudonymisation service, you can use your `PseudonymisationClient` to retrieve your domain and check your JSON Web Key Set URL.
 
 * **Name**: *jwksSupplier*
 ** **Type**: `Func<Task<string>>?`

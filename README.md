@@ -41,11 +41,7 @@ In this example, a prescriber will consult prescriptions for a patient using an 
 
 1-2
 
-:   The patient identifier cannot be given to the back-end application.
-    The integrator software will then use the library to pseudonymise
-    the identifier, which is the Belgian Social Security Identification
-    Number (SSIN), into a pseudonym in transit for the domain of the
-    targeted back-end (UHMEP API in this case).
+:   The patient identifier cannot be given to the back-end application. The integrator software will then use the library to pseudonymise the identifier, which is the Belgian Social Security Identification Number (SSIN), into a pseudonym in transit for the domain of the targeted back-end (UHMEP API in this case).
 
 3-8
 
