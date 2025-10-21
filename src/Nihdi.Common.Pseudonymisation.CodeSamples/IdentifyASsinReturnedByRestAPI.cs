@@ -1,4 +1,4 @@
-﻿// <copyright file="ResolvePseudoInTransitFromPseudoAtRest.cs" company="Riziv-Inami">
+﻿// <copyright file="IdentifyASsin.cs" company="Riziv-Inami">
 // Copyright (c) Riziv-Inami. All rights reserved.
 // </copyright>
 
@@ -6,11 +6,11 @@ using static Nihdi.Common.Pseudonymisation.CodeSamples.PseudonymisationHelper_In
 
 namespace Nihdi.Common.Pseudonymisation.CodeSamples;
 
-public class ResolvePseudoInTransitFromPseudoAtRest
+public class IdentifyASsinReturnedByRestAPI
 {
-    PseudonymisationHelper _pseudonymisationHelper;
+    private PseudonymisationHelper _pseudonymisationHelper;
 
-    public ResolvePseudoInTransitFromPseudoAtRest()
+    public IdentifyASsinReturnedByRestAPI()
     {
         _pseudonymisationHelper =
             PseudonymisationHelper
@@ -25,20 +25,33 @@ public class ResolvePseudoInTransitFromPseudoAtRest
     public void Synchronous()
     {
         // tag::sync[]
-        var domain = _pseudonymisationHelper.GetDomain("uhmep_v1");
+        var ssin =
+            _pseudonymisationHelper
+            .GetDomain("uhmep_v1")?.Result?
+            .PseudonymInTransitFactory
+            .FromSec1AndTransitInfo("...")
+            .Identify().Result
+            .AsString();
+        // end::sync[]
+    }
+
+    public async Task Asynchronous()
+    {
+        // tag::async[]
+        var domain =
+            await _pseudonymisationHelper.GetDomain("uhmep_v1");
 
         if (domain == null)
         {
             throw new InvalidOperationException("domain cannot be null");
         }
 
-        var pseudonymInTransit =
-            domain.Result
-            ?.PseudonymFactory
-            .FromX("...")
-            .InTransit()
-            .AsString();
+        var value = await
+            domain.PseudonymInTransitFactory
+            .FromSec1AndTransitInfo("...")
+            .Identify();
 
-        // end::sync[]
+        var ssin = value.AsString();
+        // end::async[]
     }
 }

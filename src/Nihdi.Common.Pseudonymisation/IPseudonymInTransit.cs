@@ -6,7 +6,7 @@ namespace Nihdi.Common.Pseudonymisation;
 
 using Nihdi.Common.Pseudonymisation.Internal;
 
-// tag:interface[]
+// tag::interface[]
 
 /// <summary>
 /// A pseudonym in transit is a pseudonym that is encrypted for transit between two domains.

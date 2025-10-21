@@ -8,7 +8,7 @@ namespace Nihdi.Common.Pseudonymisation.CodeSamples;
 
 public class IdentifyASsin
 {
-    PseudonymisationHelper _pseudonymisationHelper;
+    private PseudonymisationHelper _pseudonymisationHelper;
 
     public IdentifyASsin()
     {
