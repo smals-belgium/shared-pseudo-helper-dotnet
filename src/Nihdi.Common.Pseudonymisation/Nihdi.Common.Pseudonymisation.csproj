@@ -50,7 +50,6 @@
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-		<PackageReference Include="Nihdi.StyleCop.MsBuildProperties" Version="1.8.2" />
 		<PackageReference Include="System.Collections.Immutable" Version="9.0.2" />
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.6.2" />
 		<PackageReference Include="System.Text.Json" Version="8.0.5" />
