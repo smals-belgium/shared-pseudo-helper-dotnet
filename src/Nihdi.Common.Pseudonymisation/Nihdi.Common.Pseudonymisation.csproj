@@ -24,7 +24,7 @@
 		<Authors>RIZIV-INAMI</Authors>
 		<Description>A .NET library that helps integrators interact with the eHealth Pseudonymisation service.</Description>
 		<Title>Pseudonymisation Helper</Title>
-		<Summary>eHealth PseudonymisatXion Helper</Summary>
+		<Summary>eHealth Pseudonymisation Helper</Summary>
 		<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
 		<PackageProjectUrl>https://github.com/smals-belgium/shared-pseudo-helper-dotnet</PackageProjectUrl>
 		<PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
