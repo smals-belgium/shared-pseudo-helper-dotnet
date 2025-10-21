@@ -406,3 +406,4 @@ qodana.yaml
 # VSCodeCounter
 .VSCodeCounter/
 /README.xml
+/temp.xml
