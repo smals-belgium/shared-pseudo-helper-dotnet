@@ -1,4 +1,4 @@
-# Introduction {#_introduction}
+﻿# Introduction {#_introduction}
 
 The goal of this document is to describe the ICT ReUse Pseudonymisation
 .NET library, which helps to use the [eHealth Pseudonymisation
