@@ -185,47 +185,31 @@ parameters needed for a successful initialization.
 
 Ensure that you have the required parameters for initialization:
 
-+----------------------------+------------------------------+---------------------------+
-| Name                       | Type                         | Description               |
-+============================+==============================+===========================+
-| **pseudonymisationClient** | `IPseudonymisationClient`    | The                       |
-|                            |                              | `IPseudonymisationClient` |
-|                            |                              | interface used to make    |
-|                            |                              | calls to eHealth          |
-|                            |                              | Pseudonymisation service. |
-+----------------------------+------------------------------+---------------------------+
-| jwksUrl                    | `Uri`                        | The JSON Web Key Set URL  |
-|                            |                              | used by eHealth           |
-|                            |                              | Pseudonymisation service  |
-|                            |                              | to encrypt the domaim     |
-|                            |                              | secret keys. It **must**  |
-|                            |                              | be exactly the URL        |
-|                            |                              | defined in eHealth        |
-|                            |                              | Pseudonymisation service. |
-|                            |                              |                           |
-|                            |                              | :::: tip                  |
-|                            |                              | ::: title                 |
-|                            |                              | :::                       |
-|                            |                              |                           |
-|                            |                              | If you are not sure about |
-|                            |                              | the URL referenced in     |
-|                            |                              | eHealth Pseudonymisation  |
-|                            |                              | service, you can use your |
-|                            |                              | `PseudonymisationClient`  |
-|                            |                              | to retrieve your domain,  |
-|                            |                              | and check your JSON Web   |
-|                            |                              | Key Set URL.              |
-|                            |                              | ::::                      |
-+----------------------------+------------------------------+---------------------------+
-| jwksSupplier               | `Func<Task<string>>?`        | A Supplier of the JSon    |
-|                            |                              | Web Key Set (as String)   |
-|                            |                              | pointed by `jwksUrl`.     |
-+----------------------------+------------------------------+---------------------------+
-| privateKeySupplier         | `Func<string, Task<string>>` | A function supplying the  |
-|                            |                              | private keys that are     |
-|                            |                              | defined in the JWKS       |
-|                            |                              | supplied by jwksSupplier. |
-+----------------------------+------------------------------+---------------------------+
+- **pseudonymisationClient**
+
+      Type: `IPseudonymisationClient`
+
+      Description: The `IPseudonymisationClient` interface used to make calls to the eHealth Pseudonymisation service.
+
+- **jwksUrl**
+
+      Type: `Uri`
+
+      Description: The JSON Web Key Set URL used by the eHealth Pseudonymisation service to encrypt the domain secret keys. It **must** be exactly the URL defined in the eHealth Pseudonymisation service.
+
+      TIP: If you are not sure about the URL referenced in the eHealth Pseudonymisation service, you can use your `PseudonymisationClient` to retrieve your domain and check your JSON Web Key Set URL.
+
+- **jwksSupplier**
+
+      Type: `Func<Task<string>>?`
+
+      Description: A supplier of the JSON Web Key Set (as a string) pointed to by `jwksUrl`.
+
+- **privateKeySupplier**
+
+      Type: `Func<string, Task<string>>`
+
+      Description: A function supplying the private keys that are defined in the JWKS supplied by `jwksSupplier`.
 
 :::: tip
 ::: title
