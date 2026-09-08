@@ -1,12 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>net48;net8.0</TargetFrameworks>
+		<TargetFrameworks>net48;net8.0;net10.0</TargetFrameworks>
 	</PropertyGroup>
 
 	<!-- Exclude .NET Framework 4.8 builds on non-Windows systems -->
 	<PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-		<TargetFrameworks>net8.0</TargetFrameworks>
+		<TargetFrameworks>net8.0;net10.0</TargetFrameworks>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -46,12 +46,16 @@
 
 	<ItemGroup>
 		<PackageReference Include="BouncyCastle.Cryptography" Version="2.4.0" />
-		<PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+		<PackageReference Include="Microsoft.IdentityModel.Tokens" Version="7.6.2" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+	</ItemGroup>
+
+	<!-- Polyfills for .NET Framework: these APIs ship in-box on net8.0 and net10.0. -->
+	<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+		<PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
 		<PackageReference Include="System.Collections.Immutable" Version="9.0.2" />
-		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.6.2" />
 		<PackageReference Include="System.Text.Json" Version="8.0.5" />
 	</ItemGroup>
 </Project>
