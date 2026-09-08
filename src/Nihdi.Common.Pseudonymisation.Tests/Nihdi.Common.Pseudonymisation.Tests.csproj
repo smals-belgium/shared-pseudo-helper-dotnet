@@ -1,12 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net48;net8.0</TargetFrameworks>
+    <TargetFrameworks>net48;net8.0;net10.0</TargetFrameworks>
   </PropertyGroup>
 
   <!-- Exclude .NET Framework 4.8 builds on non-Windows systems -->
   <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-    <TargetFrameworks>net8.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
   </PropertyGroup>
 
 	<PropertyGroup>
