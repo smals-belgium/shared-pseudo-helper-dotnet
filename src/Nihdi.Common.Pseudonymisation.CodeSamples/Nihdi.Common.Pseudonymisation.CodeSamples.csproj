@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <!-- Disable all code analysis for documentation project -->
@@ -10,10 +10,6 @@
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <SonarQubeExclude>true</SonarQubeExclude>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="System.Text.Json" Version="8.0.5" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Nihdi.Common.Pseudonymisation\Nihdi.Common.Pseudonymisation.csproj" />
