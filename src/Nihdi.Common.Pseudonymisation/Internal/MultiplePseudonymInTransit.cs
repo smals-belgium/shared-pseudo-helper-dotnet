@@ -55,11 +55,26 @@ public class MultiplePseudonymInTransit
             var pseudonymInTransitToConvert = Points?[0] as PseudonymInTransit
                 ?? throw new InvalidOperationException($"The pseudonym to convert is not of type `{nameof(IPseudonymInTransit)}`");
 
-            var result = pseudonymInTransitToConvert
+            // A single element is sent to the single endpoint and returns here. Without this return,
+            // the code below would also call the `multiple` endpoint.
+            return pseudonymInTransitToConvert
                 .ConvertTo(toDomain)
-                .ContinueWith(pseudonymInTransit =>
+                .ContinueWith(task =>
                 {
-                    return new MultiplePseudonymInTransit(toDomain, new List<object> { pseudonymInTransit });
+                    if (task.Status == TaskStatus.RanToCompletion)
+                    {
+                        return (IMultiplePseudonymInTransit)new MultiplePseudonymInTransit(
+                            toDomain, new List<object> { task.Result });
+                    }
+
+                    if (task.Exception?.InnerException is EHealthProblemException eHealthProblemException)
+                    {
+                        return (IMultiplePseudonymInTransit)new MultiplePseudonymInTransit(
+                            toDomain, new List<object> { eHealthProblemException.Problem });
+                    }
+
+                    task.GetAwaiter().GetResult(); // Rethrows the original exception.
+                    throw new InvalidOperationException("Unreachable.");
                 });
         }
 
@@ -161,24 +176,25 @@ public class MultiplePseudonymInTransit
                     $"is not of type `{nameof(IPseudonymInTransit)}`");
             }
 
-            var value = pseudonymInTransitToIdentify
-            .Identify()
-            .ContinueWith(task =>
-            {
-                if (task.Status == TaskStatus.RanToCompletion)
+            // A single element is sent to the single endpoint and returns here. Without this return,
+            // the code below would also call the `multiple` endpoint.
+            return pseudonymInTransitToIdentify
+                .Identify()
+                .ContinueWith(task =>
                 {
-                    return new MultipleValue((IDomain)base.Domain, new List<object> { task.Result });
-                }
-                else if (task.Exception?.InnerException is EHealthProblemException eHealthProblemException)
-                {
-                    return new MultipleValue((IDomain)base.Domain, new List<object> { eHealthProblemException.Problem });
-                }
-                else
-                {
-                    task.GetAwaiter().GetResult(); // This will rethrow the original exception
-                    return null; // Never reached
-                }
-            });
+                    if (task.Status == TaskStatus.RanToCompletion)
+                    {
+                        return (IMultipleValue)new MultipleValue(Domain, new List<object> { task.Result });
+                    }
+
+                    if (task.Exception?.InnerException is EHealthProblemException eHealthProblemException)
+                    {
+                        return (IMultipleValue)new MultipleValue(Domain, new List<object> { eHealthProblemException.Problem });
+                    }
+
+                    task.GetAwaiter().GetResult(); // Rethrows the original exception.
+                    throw new InvalidOperationException("Unreachable.");
+                });
         }
 
         var randoms = new List<BigInteger>(nbPseudonymsInTransit);
