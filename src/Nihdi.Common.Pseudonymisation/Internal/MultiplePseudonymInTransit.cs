@@ -207,7 +207,6 @@ public class MultiplePseudonymInTransit
             var random = Domain.CreateRandom();
             var pseudonymInTransit = (PseudonymInTransit?)Points?[i] ?? throw new InvalidCastException("Cannot cast points[i] to PseundonymInTransit.");
             var payloadObj = JObject.Parse(Domain.CreatePayload(((Pseudonym)((PseudonymInTransit)Points![i]).Pseudonym()).Multiply(random), pseudonymInTransit.GetTransitInfo().AsString()));
-            payloadObj["transitInfo"] = pseudonymInTransit.GetTransitInfo().AsString();
 
             inputs.Add(payloadObj);
             randoms.Add(random);
