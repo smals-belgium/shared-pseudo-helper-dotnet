@@ -87,22 +87,26 @@ public abstract class Point : IPoint
             return false;
         }
 
-        if (Domain.Key != null && !Domain.Key.Equals(point.Domain.Key))
+        if (!Equals(Domain.Key, point.Domain.Key))
         {
             return false;
         }
 
-        var atRest = point is IPseudonymInTransit transit
-            ? (Pseudonym)((PseudonymInTransit)obj).AtRest()!
-            : this;
-
-        return Equals(EcPoint.XCoord, atRest.EcPoint.XCoord);
+        // Compare with the X of the other point. This differs from the Java version on purpose:
+        // Java compares this point with itself, so any two points of a domain are equal there.
+        // Java also handles a pseudonym in transit here. C# does not need to: PseudonymInTransit
+        // is not a Point, so it is already rejected by the check above.
+        return Equals(EcPoint.XCoord, point.EcPoint.XCoord);
     }
 
     /// <inheritdoc/>
+    /// <remarks>
+    /// Uses only the X coordinate, like Equals. Otherwise two equal points (same X, opposite Y)
+    /// would get different hash codes.
+    /// </remarks>
     public override int GetHashCode()
     {
-        return HashCode.Combine(EcPoint, Domain.Key);
+        return HashCode.Combine(EcPoint.XCoord, Domain.Key);
     }
 
     /// <inheritdoc/>
