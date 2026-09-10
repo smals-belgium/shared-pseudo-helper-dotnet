@@ -139,41 +139,4 @@ public class MultiplePseudonymInTransitSingleElementTests
             // Expected: the fake client always fails.
         }
     }
-
-    /// <summary>
-    /// A fake pseudonymisation client that records which endpoints are called.
-    /// </summary>
-    private sealed class RecordingPseudonymisationClient : IPseudonymisationClient
-    {
-        private readonly string? _response;
-
-        public RecordingPseudonymisationClient(string? response = null)
-        {
-            _response = response;
-        }
-
-        public List<string> Calls { get; } = new List<string>();
-
-        public Task<string> GetDomain(string domainKey) => Record(nameof(GetDomain));
-
-        public Task<string> Identify(string domainKey, string payload) => Record(nameof(Identify));
-
-        public Task<string> IdentifyMultiple(string domainKey, string payload) => Record(nameof(IdentifyMultiple));
-
-        public Task<string> Pseudonymize(string domainKey, string payload) => Record(nameof(Pseudonymize));
-
-        public Task<string> PseudonymizeMultiple(string domainKey, string payload) => Record(nameof(PseudonymizeMultiple));
-
-        public Task<string> ConvertTo(string fromDomainKey, string toDomainKey, string payload) => Record(nameof(ConvertTo));
-
-        public Task<string> ConvertMultipleTo(string fromDomainKey, string toDomainKey, string payload) => Record(nameof(ConvertMultipleTo));
-
-        private Task<string> Record(string name)
-        {
-            Calls.Add(name);
-            return _response != null
-                ? Task.FromResult(_response)
-                : Task.FromException<string>(new NotSupportedException(name));
-        }
-    }
 }
