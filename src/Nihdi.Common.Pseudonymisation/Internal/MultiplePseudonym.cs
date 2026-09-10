@@ -67,13 +67,24 @@ public class MultiplePseudonym : MultiplePoint<IPseudonym>, IMultiplePseudonym
                 throw new ArgumentNullException(nameof(pseudonym));
             }
 
-            pseudonym.ConvertTo(toDomain)
-                .ContinueWith(t =>
+            // A single element is sent to the single endpoint and returns here. Without this return,
+            // the code below would also call the `multiple` endpoint. An EHealthProblemException
+            // is added to the collection instead of failing the call.
+            return pseudonym.ConvertTo(toDomain)
+                .ContinueWith(task =>
                 {
-                    var pseudonymsInTransit = new List<object> { t.Result };
-                    return new MultiplePseudonymInTransit(
-                        toDomain,
-                        pseudonymsInTransit);
+                    if (task.Status == TaskStatus.RanToCompletion)
+                    {
+                        return new MultiplePseudonymInTransit(toDomain, new List<object> { task.Result });
+                    }
+
+                    if (task.Exception?.InnerException is EHealthProblemException eHealthProblemException)
+                    {
+                        return new MultiplePseudonymInTransit(toDomain, new List<object> { eHealthProblemException.Problem });
+                    }
+
+                    task.GetAwaiter().GetResult(); // Rethrows the original exception.
+                    throw new InvalidOperationException("Unreachable.");
                 });
         }
 
