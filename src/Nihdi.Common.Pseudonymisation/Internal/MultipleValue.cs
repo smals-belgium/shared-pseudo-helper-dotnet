@@ -77,9 +77,11 @@ public class MultipleValue : MultiplePoint<IValue>, IMultipleValue
                 throw new InvalidOperationException("points[0] cannot be null");
             }
 
+            // ContinueWith passes the task, not its result. Without `task.Result`, the collection
+            // would contain the task itself. If the call failed, `task.Result` rethrows the error.
             return value.Pseudonymize()
-                    .ContinueWith(pseudonymsInTransit =>
-                    new MultiplePseudonymInTransit(this.Domain, new List<object> { pseudonymsInTransit }));
+                    .ContinueWith(task =>
+                    new MultiplePseudonymInTransit(this.Domain, new List<object> { task.Result }));
         }
 
         var randoms = new List<BigInteger>(nbValues);
