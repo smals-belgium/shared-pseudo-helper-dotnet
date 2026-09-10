@@ -247,7 +247,8 @@ public class Domain : IDomain
             payload.Add("transitInfo", JToken.FromObject(transitInfo));
         }
 
-        return payload.ToString();
+        // JObject indents its output by default, which would make every request larger.
+        return payload.ToString(Newtonsoft.Json.Formatting.None);
     }
 
     /// <summary>

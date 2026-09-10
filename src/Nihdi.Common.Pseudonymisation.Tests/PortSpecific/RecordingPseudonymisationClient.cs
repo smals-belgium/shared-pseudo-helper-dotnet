@@ -32,23 +32,34 @@ internal sealed class RecordingPseudonymisationClient : IPseudonymisationClient
     /// </summary>
     public List<string> Calls { get; } = new List<string>();
 
+    /// <summary>
+    /// Gets the request bodies received so far, in order, so that a test can check what is
+    /// sent to eHealth.
+    /// </summary>
+    public List<string> Payloads { get; } = new List<string>();
+
     public Task<string> GetDomain(string domainKey) => Record(nameof(GetDomain));
 
-    public Task<string> Identify(string domainKey, string payload) => Record(nameof(Identify));
+    public Task<string> Identify(string domainKey, string payload) => Record(nameof(Identify), payload);
 
-    public Task<string> IdentifyMultiple(string domainKey, string payload) => Record(nameof(IdentifyMultiple));
+    public Task<string> IdentifyMultiple(string domainKey, string payload) => Record(nameof(IdentifyMultiple), payload);
 
-    public Task<string> Pseudonymize(string domainKey, string payload) => Record(nameof(Pseudonymize));
+    public Task<string> Pseudonymize(string domainKey, string payload) => Record(nameof(Pseudonymize), payload);
 
-    public Task<string> PseudonymizeMultiple(string domainKey, string payload) => Record(nameof(PseudonymizeMultiple));
+    public Task<string> PseudonymizeMultiple(string domainKey, string payload) => Record(nameof(PseudonymizeMultiple), payload);
 
-    public Task<string> ConvertTo(string fromDomainKey, string toDomainKey, string payload) => Record(nameof(ConvertTo));
+    public Task<string> ConvertTo(string fromDomainKey, string toDomainKey, string payload) => Record(nameof(ConvertTo), payload);
 
-    public Task<string> ConvertMultipleTo(string fromDomainKey, string toDomainKey, string payload) => Record(nameof(ConvertMultipleTo));
+    public Task<string> ConvertMultipleTo(string fromDomainKey, string toDomainKey, string payload) => Record(nameof(ConvertMultipleTo), payload);
 
-    private Task<string> Record(string name)
+    private Task<string> Record(string name, string? payload = null)
     {
         Calls.Add(name);
+        if (payload != null)
+        {
+            Payloads.Add(payload);
+        }
+
         return _response != null
             ? Task.FromResult(_response)
             : Task.FromException<string>(new NotSupportedException(name));
