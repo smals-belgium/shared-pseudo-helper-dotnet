@@ -58,35 +58,24 @@ public class RsaHelperTests
     }
 
     [TestMethod]
-    public void Create_OnNetFramework_ReturnsRsaCng()
+    public void Create_ReturnsPlatformImplementation()
     {
-#if NETFRAMEWORK
         // Act
         using var rsa = RsaHelper.Create();
 
         // Assert
+        // Only the assertion changes with the platform, so the #if goes here and not
+        // around the method. Both branches must assert something: a branch that falls
+        // back to Assert.Inconclusive leaves a test the runner still counts as skipped.
+#if NETFRAMEWORK
+        // .NET Framework hands out RSACryptoServiceProvider by default, which cannot do
+        // OaepSHA256. Getting RSACng instead is the whole reason RsaHelper exists.
         Assert.IsInstanceOfType(rsa, typeof(RSACng));
 #else
-        // This test only runs on .NET Framework
-        Assert.Inconclusive("This test is only for .NET Framework");
-#endif
-    }
-
-    [TestMethod]
-    public void Create_OnNetCore_ReturnsValidRsa()
-    {
-#if !NETFRAMEWORK
-        // Act
-        using var rsa = RsaHelper.Create();
-
-        // Assert
+        // Here RSA.Create() builds an internal type, so there is no name to compare
+        // against. That it can actually do OaepSHA256 is checked by
+        // Create_SupportsOaepSha256, on every platform.
         Assert.IsNotNull(rsa);
-        // On .NET Core/5+, RSA.Create() returns an internal type
-        // We can't check the exact type, but we can verify it works
-        Assert.IsTrue(rsa.KeySize > 0);
-#else
-        // This test only runs on .NET Core/5+
-        Assert.Inconclusive("This test is only for .NET Core/5+");
 #endif
     }
 }
