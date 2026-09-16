@@ -109,8 +109,10 @@ public class TransitInfo : ITransitInfo
     /// <inheritdoc/>
     public string Audience()
     {
+        // `aud` is in the header, not at the top level of the parsed JWE.
         var parsedJson = Parse();
-        if (!parsedJson.TryGetProperty("aud", out JsonElement value) || value.ValueKind != JsonValueKind.Null)
+        if (!parsedJson.TryGetProperty("header", out JsonElement header)
+            || !header.TryGetProperty("aud", out JsonElement value))
         {
             throw new InvalidTransitInfoException("Missing `aud` in header.");
         }
@@ -228,6 +230,52 @@ public class TransitInfo : ITransitInfo
         return null;
     }
 
+    /// <inheritdoc/>
+    public override bool Equals(object? obj)
+    {
+        if (ReferenceEquals(this, obj))
+        {
+            return true;
+        }
+
+        if (obj is not TransitInfo that)
+        {
+            return false;
+        }
+
+        return _raw == that._raw;
+    }
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Uses only `_raw`, like Equals.
+    /// <para>
+    /// This differs from the Java version on purpose. Java also hashes the parsed value, so two
+    /// equal objects can get different hash codes, and Dictionary or HashSet lookups fail.
+    /// </para>
+    /// </remarks>
+    public override int GetHashCode()
+    {
+        return _raw?.GetHashCode() ?? 0;
+    }
+
+    /// <inheritdoc/>
+    /// <exception cref="InvalidTransitInfoException">Thrown when the transit info cannot be parsed.</exception>
+    public override string ToString()
+    {
+        // This parses the transit info, so it can throw. The payload always shows as
+        // "not decrypted", because Payload() does not keep the decrypted payload.
+        var parsedJson = Parse();
+        var header = parsedJson.TryGetProperty("header", out var headerElement)
+            ? headerElement.GetRawText()
+            : "null";
+        var payload = parsedJson.TryGetProperty("payload", out var payloadElement)
+            ? payloadElement.GetRawText()
+            : "\"not decrypted\"";
+
+        return "{\"header\": " + header + ", \"payload\": " + payload + "}";
+    }
+
     /// <summary>
     /// Validates the payload of the transit info.
     /// </summary>
@@ -294,8 +342,8 @@ public class TransitInfo : ITransitInfo
             throw new InvalidTransitInfoException("Missing `enc` in header.");
         }
 
-        var aud = header.GetProperty("aud").GetString();
-        if (string.IsNullOrEmpty(aud))
+        // A missing or blank `aud` throws InvalidTransitInfoException.
+        if (!header.TryGetProperty("aud", out var aud) || string.IsNullOrWhiteSpace(aud.ToString()))
         {
             throw new InvalidTransitInfoException("Missing `aud` in header.");
         }
@@ -323,11 +371,14 @@ public class TransitInfo : ITransitInfo
         return computedCustomHeaderParams;
     }
 
+    // Reject the header if it is null, has no `aud`, or has an `aud` different from the domain
+    // audience. Take care with the parentheses: a wrong grouping here accepts transit info
+    // meant for another domain.
     private void ValidateTransitInfoHeader(JsonElement? transitInfoHeader)
     {
         if (transitInfoHeader is null
-            || !(transitInfoHeader.Value.TryGetProperty("aud", out JsonElement audElement)
-            || audElement.GetString() != _domain.Audience))
+            || !transitInfoHeader.Value.TryGetProperty("aud", out JsonElement audElement)
+            || audElement.ToString() != _domain.Audience)
         {
             throw new InvalidTransitInfoException("Invalid `aud`");
         }

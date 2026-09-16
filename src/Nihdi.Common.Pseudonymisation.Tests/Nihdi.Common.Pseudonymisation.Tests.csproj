@@ -1,7 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- net8.0 first: the C# Dev Kit test explorer debugs the first target framework, and it cannot
+       attach to the .NET Framework test host. The net48 tests still run from the CI and from the
+       "test: all target frameworks" task. -->
   <PropertyGroup>
-    <TargetFrameworks>net48;net8.0;net10.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;net10.0;net48</TargetFrameworks>
   </PropertyGroup>
 
   <!-- Exclude .NET Framework 4.8 builds on non-Windows systems -->

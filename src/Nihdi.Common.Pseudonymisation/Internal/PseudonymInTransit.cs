@@ -121,7 +121,8 @@ public class PseudonymInTransit : IPseudonymInTransit
             _transitInfo.ValidatePayload();
         }
 
-        var scalar = new BigInteger(Base64UrlEncoder.DecodeBytes(payload?["scalar"]?.ToString()!));
+        // The scalar is written with Convert.ToBase64String, so it is read back the same way.
+        var scalar = new BigInteger(Convert.FromBase64String(payload?["scalar"]?.ToString()!));
         return _pseudonym.Multiply(scalar);
     }
 

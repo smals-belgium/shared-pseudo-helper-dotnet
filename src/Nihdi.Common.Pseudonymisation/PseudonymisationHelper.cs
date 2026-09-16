@@ -167,10 +167,12 @@ public sealed class PseudonymisationHelper
                 throw new ArgumentNullException(nameof(_pseudonymisationClient));
             }
 
-            var result = await _pseudonymisationClient
+            // Store the domain under the requested key, not under the key returned by eHealth,
+            // which can be different.
+            await _pseudonymisationClient
                 .GetDomain(domainKey)
                 .ContinueWith(task => CreateDomain(task.Result))
-                .ContinueWith(task => _domains[task.Result.Key ?? throw new InvalidOperationException()] = task.Result);
+                .ContinueWith(task => _domains[domainKey] = task.Result);
         }
         finally
         {
