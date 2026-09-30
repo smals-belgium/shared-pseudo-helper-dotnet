@@ -321,6 +321,12 @@ public sealed class PseudonymisationHelper
 
             foreach (var secretKey in secretKeysFromEHealth)
             {
+                // Set inside the try, acted on after it. The catch below wraps every failure it
+                // sees, so throwing from inside would bury the message under a generic one. The
+                // two cannot be told apart by exception type either: JweToken.Decrypt throws
+                // InvalidOperationException as well. Hence the separation by position.
+                string? unreadableKid = null;
+
                 try
                 {
                     var kid = secretKey.Kid ?? throw new InvalidOperationException("Could not find `kid` field.");
@@ -368,7 +374,7 @@ public sealed class PseudonymisationHelper
                     }
                     else
                     {
-                        _logger.LogError(_kidProblemWithDomain, kid, domainKey, rawDomain);
+                        unreadableKid = kid;
                     }
                 }
                 catch (Exception ex)
@@ -379,6 +385,15 @@ public sealed class PseudonymisationHelper
                         domainKey,
                         rawDomain);
                     throw new InvalidOperationException("Failed to process the JWE object.", ex);
+                }
+
+                if (unreadableKid != null)
+                {
+                    // A domain we own whose key we cannot read is unusable. Saying so here,
+                    // with the key and the domain, beats handing back a domain that fails
+                    // later on every call.
+                    _logger.LogError(_kidProblemWithDomain, unreadableKid, domainKey, rawDomain);
+                    throw new InvalidOperationException($"Failed to decrypt the secret key with kid `{unreadableKid}` of the domain `{domainKey}`");
                 }
             }
         }
