@@ -24,6 +24,11 @@ using Org.BouncyCastle.Security;
 /// </summary>
 public sealed class PseudonymisationHelper
 {
+    /// <summary>
+    /// How long the helper waits for eHealth, or for the JWKS supplier, before giving up.
+    /// </summary>
+    private static readonly TimeSpan _eHealthTimeout = TimeSpan.FromSeconds(5);
+
     private readonly ILogger<PseudonymisationHelper> _logger;
     private readonly Uri? _jwksUrl;
     private readonly Func<Task<string>>? _jwksSupplier;
@@ -49,6 +54,11 @@ public sealed class PseudonymisationHelper
     /// <param name="jwksSupplier">A function that supplies the JWKS as a string.</param>
     /// <param name="pseudonymisationClient">The pseudonymisation client to use for domain operations.</param>
     /// <param name="privateKeySupplier">A function that supplies the private key in JWK format based on the key ID.</param>
+    /// <remarks>
+    /// Calls `jwksSupplier` and waits up to 5 seconds for the answer. If that fails, the constructor
+    /// does not throw: the failure is logged and a new fetch starts at once. The next domain loaded
+    /// with <see cref="GetDomain"/> waits for that fetch, and fails if the key server is still down.
+    /// </remarks>
     public PseudonymisationHelper(
         Uri? jwksUrl,
         Func<Task<string>>? jwksSupplier,
@@ -76,32 +86,20 @@ public sealed class PseudonymisationHelper
 
         _semaphore = new SemaphoreSlim(1, 1);
 
-        if (jwksUrl == null)
-        {
-            _logger.LogInformation($"{nameof(jwksUrl)} is null: this {nameof(PseudonymisationHelper)} will not be able to encrypt or decrypt any transit info");
-        }
-
-        if (jwksSupplier == null)
-        {
-            _logger.LogInformation($"{nameof(jwksSupplier)} is null: this {nameof(PseudonymisationHelper)} will not be able to encrypt or decrypt any transit info");
-            _jwkSet = Task.FromException<JsonWebKeySet>(new NullReferenceException($"{nameof(jwksSupplier)} cannot be null if you need to encrypt/decrypt transit info"));
-        }
-        else
-        {
-            RefreshJwks();
-        }
+        InitJwksSilently();
 
         var properties = new Dictionary<string, object?>
         {
-            { "jwksSupplier", jwksSupplier },
+            { nameof(jwksSupplier), jwksSupplier },
+            { nameof(jwksUrl), jwksUrl },
         };
 
-        properties
-        .Where(property => property.Value == null)
-        .ToList()
-        .ForEach(property => _logger.LogInformation(
-            "{0} is null: this PseudonymisationHelper will not be able to encrypt or decrypt any transit inform",
-            property.Key));
+        foreach (var property in properties.Where(property => property.Value == null))
+        {
+            _logger.LogWarning(
+                "`{Property}` is null: this PseudonymisationHelper will not be able to encrypt or decrypt any transit info",
+                property.Key);
+        }
 
         _domains = new ConcurrentDictionary<string, IDomain?>();
     }
@@ -116,6 +114,10 @@ public sealed class PseudonymisationHelper
     /// An unmodifiable <see cref="IImmutableSet{T}"/> containing the list of
     /// the domains that must be refreshed.
     /// </value>
+    /// <remarks>
+    /// Never calls eHealth: the set is held in memory. It lists the domains you own that have
+    /// already been loaded, not every domain you own: one never asked for is not in it.
+    /// </remarks>
     public IImmutableSet<string> RefreshableDomains
     {
         get
@@ -128,24 +130,46 @@ public sealed class PseudonymisationHelper
     /// Creates a new instance of the <see cref="PseudonymisationHelperBuilder"/> class.
     /// </summary>
     /// <returns>A new instance of the <see cref="PseudonymisationHelperBuilder"/> class.</returns>
+    /// <remarks>Never calls eHealth: the builder only collects values, `Build()` is where work starts.</remarks>
     public static PseudonymisationHelperBuilder Builder()
     {
         return new PseudonymisationHelperBuilder();
     }
 
     /// <summary>
-    /// Refresh the JWK set.
-    /// This method will retrieve the JWK set string by calling `jwksSupplier`
-    /// given in the constructor, every time there is an unknown key ID in your
-    /// recipient of one of the JWE defined in the domain.
-    /// Despite this, it is recommended to call this method as soon as you know
-    /// that an update has been made to the JWKS.
+    /// Ask for the JWK set to be fetched again.
+    /// This method does not wait for the answer: it only replaces the pending fetch by a new
+    /// one, which the next reader of the JWK set will wait for.
+    /// It is called automatically every time there is an unknown key ID in your recipient of
+    /// one of the JWE defined in the domain. Despite this, it is recommended to call it as
+    /// soon as you know that an update has been made to the JWKS.
     /// It is up to you to cache or not the string returned by `jwksSupplier`.
+    /// If you did not provide any `jwksSupplier`, this method has no effect.
     /// </summary>
-    public void RefreshJwks()
+    /// <remarks>
+    /// Calls `jwksSupplier` on the spot, despite the name and the `void` return. What it does not
+    /// do is wait for the answer: the next reader of the JWK set pays that wait.
+    /// </remarks>
+    public void FlagJwksForRefresh()
     {
-        var json = _jwksSupplier?.Invoke().Result;
-        _jwkSet = Task.FromResult(JsonWebKeySet.Create(json));
+        if (_jwksSupplier != null)
+        {
+            // The supplier is called here, not inside ParseJwks, so that a supplier which
+            // throws on the spot fails the caller instead of the task nobody is watching yet.
+            var pending = ParseJwks(WithTimeout(_jwksSupplier(), _eHealthTimeout));
+
+            // Nobody is obliged to read this fetch: another call may replace it first, and the
+            // caller of this method never waits for it. A failure nobody reads is dropped on purpose,
+            // since a newer fetch supersedes it; reading it here stops .NET from reporting it later
+            // as an unobserved task exception, far from its cause.
+            _ = pending.ContinueWith(
+                task => _ = task.Exception,
+                CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
+
+            _jwkSet = pending;
+        }
     }
 
     /// <summary>
@@ -156,6 +180,10 @@ public sealed class PseudonymisationHelper
     /// </summary>
     /// <param name="domainKey">The domain key.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// Always calls eHealth, through <see cref="IPseudonymisationClient.GetDomain(string)"/>.
+    /// One refresh runs at a time for all domains together, so a slow answer delays the others.
+    /// </remarks>
     public async Task RefreshDomain(string domainKey)
     {
         await _semaphore.WaitAsync();
@@ -186,6 +214,11 @@ public sealed class PseudonymisationHelper
     /// </summary>
     /// <param name="domainKey">The key of the domain to retrieve.</param>
     /// <returns>A <see cref="IDomain"/> representing the domain, or null if not found.</returns>
+    /// <remarks>
+    /// Calls eHealth only when the domain is not held yet; a domain already loaded is returned
+    /// from memory. The same call is therefore instant or a network round trip, depending on what
+    /// the rest of the application did before.
+    /// </remarks>
     public Task<IDomain?> GetDomain(string domainKey)
     {
         IDomain? domain;
@@ -213,6 +246,56 @@ public sealed class PseudonymisationHelper
         return Base64UrlEncoder.DecodeBytes(input);
     }
 
+    /// <summary>
+    /// Returns a task that gives up after the given delay.
+    /// The work already started is not cancelled, only abandoned: whoever started it cannot be
+    /// told to stop, so the call may well still be running when this task has already failed.
+    /// </summary>
+    /// <typeparam name="T">The type of the awaited result.</typeparam>
+    /// <param name="task">The task to put a time limit on.</param>
+    /// <param name="timeout">How long to wait before giving up.</param>
+    /// <returns>A task that fails with a <see cref="TimeoutException"/> once the delay is over.</returns>
+    private static async Task<T> WithTimeout<T>(Task<T> task, TimeSpan timeout)
+    {
+        using (var giveUp = new CancellationTokenSource())
+        {
+            var finished = await Task.WhenAny(task, Task.Delay(timeout, giveUp.Token)).ConfigureAwait(false);
+
+            if (finished != task)
+            {
+                throw new TimeoutException($"No answer after {timeout.TotalSeconds:0.#} seconds.");
+            }
+
+            // Stop the timer, otherwise it holds a pending task until the delay is over.
+            giveUp.Cancel();
+
+            return await task.ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Returns the first of the given key IDs that our JWK set knows about.
+    /// </summary>
+    /// <param name="jwks">Our own JWK set.</param>
+    /// <param name="kids">The key IDs the recipients were encrypted for.</param>
+    /// <returns>The matching key, or null when the JWK set knows none of them.</returns>
+    private static JsonWebKey? FindMatchingJwk(JsonWebKeySet jwks, List<string> kids)
+    {
+        return kids
+            .Select(kid => jwks.Keys.FirstOrDefault(key => key.KeyId == kid))
+            .FirstOrDefault(key => key != null);
+    }
+
+    /// <summary>
+    /// Parses the JWK set once the supplier has answered.
+    /// </summary>
+    /// <param name="fetch">The pending call to the JWKS supplier.</param>
+    /// <returns>The parsed JWK set.</returns>
+    private static async Task<JsonWebKeySet> ParseJwks(Task<string> fetch)
+    {
+        return JsonWebKeySet.Create(await fetch.ConfigureAwait(false));
+    }
+
     private Domain CreateDomain(string rawDomain)
     {
         string? activeKid = null;
@@ -237,55 +320,53 @@ public sealed class PseudonymisationHelper
                 {
                     var kid = secretKey.Kid ?? throw new InvalidOperationException("Could not find `kid` field.");
                     var jwe = secretKey.Jwe;
-                    jwe.Recipients.RemoveAll(r => r.Header.Jku != jku);
-                    var isActiveKid = secretKey.Active;
+                    var jweKey = GetJweKey(jwe, jku);
 
-                    var myKid = jwe.Recipients.FirstOrDefault(r => r.Header.Jku == jku)?.Header.Kid;
-
-                    if (myKid != null)
+                    if (jweKey != null)
                     {
-                        var privateKid = myKid;
-                        var jsonWebKey = GetJsonWebKey(myKid, domainKey);
+                        // Get the RSA private key using the key supplier
+                        var hash = jweKey.X5tS256;
 
-                        if (jsonWebKey != null)
+                        if (_privateKeySupplier == null)
                         {
-                            // Get the RSA private key using the key supplier
-                            var hash = jsonWebKey.X5tS256;
-
-                            if (_privateKeySupplier == null)
-                            {
-                                throw new ArgumentNullException($"{nameof(_privateKeySupplier)}");
-                            }
-
-                            string privateKeyJwkJson = _privateKeySupplier(hash);
-                            JsonWebKey privateKeyJwk = JsonWebKeyFactory.Create(privateKeyJwkJson);
-
-                            var decryptedJwe = jwe.Decrypt(privateKeyJwk, myKid);
-
-                            // Parse the decrypted payload to extract the secret key
-                            var jwkJson = JsonNode.Parse(decryptedJwe.Payload);
-                            var jwk = JsonWebKey.Create(decryptedJwe.Payload);
-
-                            var algName = jwkJson?["alg"]?.ToString() ?? throw new InvalidOperationException();
-
-                            var alg = ConvertStringToJweAlgorithm(algName);
-
-                            var k = jwkJson["k"]?.ToString();
-                            if (k == null)
-                            {
-                                throw new InvalidOperationException("Jwk does not contain a `k` property.");
-                            }
-
-                            var secretKeyBytes = Base64UrlDecode(k);
-                            // Utils.Base64Decoder.Decode(k)
-                            secretKeys[kid] = new SymmetricSecurityKey(secretKeyBytes);
-
-                            if (isActiveKid)
-                            {
-                                activeKid = kid;
-                                activeKeyAlgorithm = alg;
-                            }
+                            throw new ArgumentNullException($"{nameof(_privateKeySupplier)}");
                         }
+
+                        string privateKeyJwkJson = _privateKeySupplier(hash);
+                        JsonWebKey privateKeyJwk = JsonWebKeyFactory.Create(privateKeyJwkJson);
+
+                        var decryptedJwe = jwe.Decrypt(privateKeyJwk, jweKey.KeyId);
+
+                        // Parse the decrypted payload to extract the secret key
+                        var jwkJson = JsonNode.Parse(decryptedJwe.Payload);
+                        var jwk = JsonWebKey.Create(decryptedJwe.Payload);
+
+                        var algName = jwkJson?["alg"]?.ToString() ?? throw new InvalidOperationException();
+
+                        var alg = ConvertStringToJweAlgorithm(algName);
+
+                        var k = jwkJson["k"]?.ToString();
+                        if (k == null)
+                        {
+                            throw new InvalidOperationException("Jwk does not contain a `k` property.");
+                        }
+
+                        var secretKeyBytes = Base64UrlDecode(k);
+                        // Utils.Base64Decoder.Decode(k)
+                        secretKeys[kid] = new SymmetricSecurityKey(secretKeyBytes);
+
+                        if (secretKey.Active)
+                        {
+                            activeKid = kid;
+                            activeKeyAlgorithm = alg;
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogError(
+                            "No matching kid found in the JWKS `{JwksUrl}`: impossible to encrypt/decrypt any transit info of the domain `{DomainKey}`",
+                            _jwksUrl,
+                            domainKey);
                     }
                 }
                 catch (Exception ex)
@@ -347,28 +428,39 @@ public sealed class PseudonymisationHelper
         }
     }
 
-    private JsonWebKey? GetJsonWebKey(string privateKid, string? domainKey)
+    /// <summary>
+    /// Finds, in our own JWK set, the key that one of the recipients of this JWE was encrypted
+    /// for. A secret key can be addressed to several recipients, and more than one of them can
+    /// carry our JKU, so every matching key ID is tried, not just the first.
+    /// </summary>
+    /// <param name="parsedJwe">The encrypted secret key, with its list of recipients.</param>
+    /// <param name="jku">The address of our own JWK set, as eHealth knows it.</param>
+    /// <returns>The key to decrypt with, or null when none of the recipients is ours.</returns>
+    private JsonWebKey? GetJweKey(JweToken parsedJwe, string jku)
     {
-        var jweKey = GetJwks().Keys.FirstOrDefault(k => k.KeyId == privateKid);
-        // If the private key is unknown, we will refresh the JWKS
-        if (jweKey == null)
-        {
-            RefreshJwks();
-            jweKey = GetJwks().Keys.FirstOrDefault(k => k.KeyId == privateKid);
-        }
+        var kids = parsedJwe.Recipients
+            .Select(recipient => recipient.Header)
+            .Where(header => jku == header.Jku)
+            .Select(header => header.Kid)
+            .ToList();
 
+        var jweKey = FindMatchingJwk(GetJwks(), kids);
+
+        // The key IDs may be newer than the JWK set we hold: fetch it again and look once more.
         if (jweKey == null)
         {
-            // If the private key is still unknown, we log the error
-            var msg = $"The kid `{privateKid}` is not present in the"
-                  + $"JWKS `{_jwksUrl}`: impossible to encrypt/decrypt any "
-                  + $"transit info of domain `{domainKey}`";
-            _logger.LogError(msg);
+            FlagJwksForRefresh();
+            jweKey = FindMatchingJwk(GetJwks(), kids);
         }
 
         return jweKey;
     }
 
+    /// <summary>
+    /// Waits for the JWK set. When the fetch failed, the JWK set is flagged for refresh so that
+    /// the next reader starts a new fetch instead of failing on the same stale error.
+    /// </summary>
+    /// <returns>The current JWK set.</returns>
     private JsonWebKeySet GetJwks()
     {
         try
@@ -378,6 +470,7 @@ public sealed class PseudonymisationHelper
         catch (ThreadInterruptedException ex)
         {
             _logger.LogError(ex, "The current thread was interrupted.");
+            FlagJwksForRefresh();
             Thread.CurrentThread.Interrupt();
             throw;
         }
@@ -388,7 +481,38 @@ public sealed class PseudonymisationHelper
                 _logger.LogError(exception, exception.Message);
             }
 
+            FlagJwksForRefresh();
             throw;
+        }
+    }
+
+    /// <summary>
+    /// Starts the first fetch of the JWK set and waits for it, without ever failing the caller.
+    /// A key server that is down must not stop an application from starting: the failure is
+    /// logged, and the next reader of the JWK set will try again.
+    /// </summary>
+    private void InitJwksSilently()
+    {
+        if (_jwksSupplier == null)
+        {
+            _jwkSet = Task.FromException<JsonWebKeySet>(
+                new NullReferenceException("`jwksSupplier` cannot be null if you need to encrypt/decrypt transit info"));
+            return;
+        }
+
+        FlagJwksForRefresh();
+
+        try
+        {
+            // Wait for that first fetch here: the key set is then ready before this constructor
+            // returns, so the first transit info does not pay for it, and a key server that is
+            // down is reported now rather than hours later on the first real call. The returned
+            // set is not needed — it is already held in _jwkSet.
+            _ = GetJwks();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to retrieve JWKS");
         }
     }
 
@@ -454,6 +578,10 @@ public sealed class PseudonymisationHelper
         /// Builds the <see cref="PseudonymisationHelper"/> instance.
         /// </summary>
         /// <returns>A new instance of <see cref="PseudonymisationHelper"/>.</returns>
+        /// <remarks>
+        /// Calls the JWKS supplier and waits up to 5 seconds for the answer before returning.
+        /// A failure is logged, not thrown: a key server that is down does not stop the build.
+        /// </remarks>
         public PseudonymisationHelper? Build()
         {
             if (_pseudonymisationClient == null)
