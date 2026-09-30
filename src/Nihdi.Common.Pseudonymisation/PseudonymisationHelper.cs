@@ -24,6 +24,10 @@ using Org.BouncyCastle.Security;
 /// </summary>
 public sealed class PseudonymisationHelper
 {
+    private const string _kidProblemWithDomain =
+        "Failed to decrypt the secret key with kid `{Kid}` of the domain `{DomainKey}`. " +
+        "The response from eHealth was\n{RawDomain}";
+
     /// <summary>
     /// How long the helper waits for eHealth, or for the JWKS supplier, before giving up.
     /// </summary>
@@ -310,6 +314,7 @@ public sealed class PseudonymisationHelper
 
         var jkuList = parsedEHealthDomain["jku"]?.Deserialize<List<string>>();
 
+        // If we are an owner of the domain, we decrypt all the secret keys
         if (jku != null && _jwksSupplier != null && jkuList?.Contains(jku) == true && secretKeysFromEHealth != null)
         {
             isKnownJku = true;
@@ -363,15 +368,16 @@ public sealed class PseudonymisationHelper
                     }
                     else
                     {
-                        _logger.LogError(
-                            "No matching kid found in the JWKS `{JwksUrl}`: impossible to encrypt/decrypt any transit info of the domain `{DomainKey}`",
-                            _jwksUrl,
-                            domainKey);
+                        _logger.LogError(_kidProblemWithDomain, kid, domainKey, rawDomain);
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error while decoding JWT token.");
+                    _logger.LogError(
+                        ex,
+                        "An error occurred when processing the domain `{DomainKey}`. Response from eHealth was\n{RawDomain}",
+                        domainKey,
+                        rawDomain);
                     throw new InvalidOperationException("Failed to process the JWE object.", ex);
                 }
             }
@@ -444,6 +450,12 @@ public sealed class PseudonymisationHelper
             .Select(header => header.Kid)
             .ToList();
 
+        if (kids.Count == 0)
+        {
+            _logger.LogError("No valid recipient found in the domain's secret key for the JKU: {Jku}", jku);
+            return null;
+        }
+
         var jweKey = FindMatchingJwk(GetJwks(), kids);
 
         // The key IDs may be newer than the JWK set we hold: fetch it again and look once more.
@@ -451,6 +463,11 @@ public sealed class PseudonymisationHelper
         {
             FlagJwksForRefresh();
             jweKey = FindMatchingJwk(GetJwks(), kids);
+        }
+
+        if (jweKey == null)
+        {
+            _logger.LogError("No JWK with kids in {Kids} found in the JKU `{Jku}`", string.Join(", ", kids), jku);
         }
 
         return jweKey;
