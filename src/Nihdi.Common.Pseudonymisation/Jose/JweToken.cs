@@ -121,8 +121,16 @@ public class JweToken
     /// <returns>The decrypted payload.</returns>
     public JweDecryptedPayload Decrypt(JsonWebKey jwk, string myKid)
     {
-        // Find the correct recipient by "kid"
-        var recipient = Recipients.FirstOrDefault(r => r.Header.Kid == myKid);
+        // Without a kid, the lookup below would pick a recipient with no header (null == null)
+        // and decrypt with the wrong key, failing much later with a misleading error.
+        if (string.IsNullOrEmpty(myKid))
+        {
+            throw new ArgumentException("The kid of the recipient is required.", nameof(myKid));
+        }
+
+        // Find the correct recipient by "kid". A recipient can come with no header at all,
+        // so ask for the kid without assuming there is one.
+        var recipient = Recipients.FirstOrDefault(r => r.Header?.Kid == myKid);
 
         if (recipient == null)
         {

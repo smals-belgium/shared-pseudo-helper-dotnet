@@ -38,6 +38,21 @@ public class PseudonymisationHelperSecretKeyTests
     }
 
     [TestMethod]
+    public void RefreshDomain_WhenARecipientHasNoHeader_SkipsItInsteadOfCrashing()
+    {
+        // In case eHealth returns a recipient with `"header": null`, which leaves it with no header
+        // object at all.
+        var recipients = "[{\"encrypted_key\":\"AA\",\"header\":null}," + RecipientAddressedTo(_someoneElsesJku) + "]";
+
+        var failure = FailureOfRefreshDomain(DomainJson(recipients));
+
+        Assert.IsFalse(
+            failure.Contains(nameof(NullReferenceException)),
+            $"A recipient with no header crashed the helper: {failure}");
+        StringAssert.Contains(failure, _secretKeyKid);
+    }
+
+    [TestMethod]
     public void RefreshDomain_WhenNoRecipientIsAddressedToUs_SaysSoWithoutBuryingItUnderAGenericWrapper()
     {
         var recipients = "[" + RecipientAddressedTo(_someoneElsesJku) + "]";
