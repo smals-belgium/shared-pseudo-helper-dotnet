@@ -418,7 +418,25 @@ public class PseudonymisationHelperTest
                 pseudoKey,
                 secretKey,
                 "RSA-OAEP-256",
-                "https://api-acpt.ehealth.fgov.be/etee/v1/pubKeys/cacerts/jwks?identifier=0809394427&type=CBE&applicationIdentifier=PSEUDONYMISATION&use=enc")
+                "https://api-acpt.ehealth.fgov.be/etee/v1/pubKeys/cacerts/jwks?identifier=0809394427&type=CBE&applicationIdentifier=PSEUDONYMISATION&use=enc"),
+
+            // In case eHealth returns other recipients alongside ours: one addressed to another
+            // key set, one with an empty header, one with no header at all. None of them is ours,
+            // and none of them may stop us from finding the one that is.
+            new
+            {
+                encrypted_key = Base64UrlEncoder.Encode(new byte[] { 0x00 }),
+                header = new { jku = "https://my-jwks.net/1757512889" }
+            },
+            new
+            {
+                encrypted_key = Base64UrlEncoder.Encode(new byte[] { 0x00 }),
+                header = new { }
+            },
+            new
+            {
+                encrypted_key = Base64UrlEncoder.Encode(new byte[] { 0x00 })
+            }
         };
 
         return new
