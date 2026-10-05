@@ -1,8 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- net8.0 first: the C# Dev Kit test explorer debugs the first target framework, and it cannot
-       attach to the .NET Framework test host. The net48 tests still run from the CI and from the
-       "test: all target frameworks" task. -->
+  <!-- Debugging a test by right-clicking it in the editor runs it on every target framework
+       below, one after the other, and the debugger cannot attach to the .NET Framework host: the
+       run then sits there doing nothing until you kill it, and only then reaches your breakpoint.
+       Debug from the Test Explorer instead. It lists the test once per target framework, so you
+       pick the one you want and only that one runs. -->
   <PropertyGroup>
     <TargetFrameworks>net8.0;net10.0;net48</TargetFrameworks>
   </PropertyGroup>
