@@ -13,7 +13,7 @@ namespace Nihdi.Common.Pseudonymisation.Tests.PortSpecific;
 [TestClass]
 public class PayloadFormatTests
 {
-    private const string DomainKey = "test";
+    private const string _domainKey = "test";
 
     [TestMethod]
     public void CreatePayload_ProducesCompactJson()
@@ -44,7 +44,7 @@ public class PayloadFormatTests
     {
         // `crv` must be set, because building the request payload needs it.
         return new Domain(
-            DomainKey,
+            _domainKey,
             "P-521",
             EcCurveNames.GetCurveFromString("P-521"),
             null,

@@ -14,7 +14,7 @@ namespace Nihdi.Common.Pseudonymisation.Tests.PortSpecific;
 [TestClass]
 public class TransitInfoEqualityTests
 {
-    private const string TransitInfoRaw =
+    private const string _transitInfoRaw =
         "eyJhdWQiOiJodHRwczovL2FwaS1hY3B0LmVoZWFsdGguZmdvdi5iZS9wc2V1ZG8v" +
         "djEvZG9tYWlucy9laGVhbHRoX3YxIiwiZW5jIjoiQTI1NkdDTSIsImV4cCI6MTcx" +
         "ODIwMzI4OCwiaWF0IjoxNzE4MjAyNjg4LCJhbGciOiJkaXIiLCJraWQiOiJiNTRj" +
@@ -24,7 +24,7 @@ public class TransitInfoEqualityTests
         "dURIJBFOH_MEyZCCAcK6TuYRM98aGPV2SMU06RUnqrWZa1eie93w4u.SNkaDxhvp" +
         "QaQL0aBumRLmQ";
 
-    private const string PseudonymInTransitRaw =
+    private const string _pseudonymInTransitRaw =
         "BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAx" +
         "MjM0NTY3ODkxMAwAAAAAAAAAAQHjvYbZ2eX0Wdz8UejdWdSmg5HWrHNActe2loX3" +
         "Q2Y02CL_hX1ORsOFn_A6PbMLOXvFLBeE-Ue2-8aj5iSGZbWnag" +
@@ -43,8 +43,8 @@ public class TransitInfoEqualityTests
     [TestMethod]
     public void Equals_OnTwoTransitInfosBuiltFromTheSameString_IsTrue()
     {
-        var one = new TransitInfo(_domain, TransitInfoRaw);
-        var other = new TransitInfo(_domain, TransitInfoRaw);
+        var one = new TransitInfo(_domain, _transitInfoRaw);
+        var other = new TransitInfo(_domain, _transitInfoRaw);
 
         Assert.IsTrue(one.Equals(other));
     }
@@ -52,8 +52,8 @@ public class TransitInfoEqualityTests
     [TestMethod]
     public void GetHashCode_OnTwoTransitInfosBuiltFromTheSameString_IsTheSame()
     {
-        var one = new TransitInfo(_domain, TransitInfoRaw);
-        var other = new TransitInfo(_domain, TransitInfoRaw);
+        var one = new TransitInfo(_domain, _transitInfoRaw);
+        var other = new TransitInfo(_domain, _transitInfoRaw);
 
         Assert.AreEqual(one.GetHashCode(), other.GetHashCode());
     }
@@ -61,8 +61,8 @@ public class TransitInfoEqualityTests
     [TestMethod]
     public void Equals_OnTwoTransitInfosBuiltFromDifferentStrings_IsFalse()
     {
-        var one = new TransitInfo(_domain, TransitInfoRaw);
-        var other = new TransitInfo(_domain, TransitInfoRaw.Replace("zO-S0LyrwtQLb-x9", "zO-S0LyrwtQLb-x8"));
+        var one = new TransitInfo(_domain, _transitInfoRaw);
+        var other = new TransitInfo(_domain, _transitInfoRaw.Replace("zO-S0LyrwtQLb-x9", "zO-S0LyrwtQLb-x8"));
 
         Assert.IsFalse(one.Equals(other));
     }
@@ -70,7 +70,7 @@ public class TransitInfoEqualityTests
     [TestMethod]
     public void ToString_WhenThePayloadIsNotDecrypted_ReportsTheHeaderAndSaysSo()
     {
-        var transitInfo = new TransitInfo(_domain, TransitInfoRaw);
+        var transitInfo = new TransitInfo(_domain, _transitInfoRaw);
 
         var text = transitInfo.ToString();
 
@@ -82,8 +82,8 @@ public class TransitInfoEqualityTests
     [TestMethod]
     public void PseudonymInTransit_Equals_OnTwoInstancesBuiltFromTheSameString_IsTrue()
     {
-        var one = _domain.PseudonymInTransitFactory.FromSec1AndTransitInfo(PseudonymInTransitRaw);
-        var other = _domain.PseudonymInTransitFactory.FromSec1AndTransitInfo(PseudonymInTransitRaw);
+        var one = _domain.PseudonymInTransitFactory.FromSec1AndTransitInfo(_pseudonymInTransitRaw);
+        var other = _domain.PseudonymInTransitFactory.FromSec1AndTransitInfo(_pseudonymInTransitRaw);
 
         Assert.IsTrue(one.Equals(other));
         Assert.AreEqual(one.GetHashCode(), other.GetHashCode());
@@ -92,7 +92,7 @@ public class TransitInfoEqualityTests
     [TestMethod]
     public void PseudonymInTransit_ToString_EmbedsTheTransitInfoAsJson()
     {
-        var pseudonymInTransit = _domain.PseudonymInTransitFactory.FromSec1AndTransitInfo(PseudonymInTransitRaw);
+        var pseudonymInTransit = _domain.PseudonymInTransitFactory.FromSec1AndTransitInfo(_pseudonymInTransitRaw);
 
         StringAssert.Contains(pseudonymInTransit.ToString(), "\"transitInfo\": {\"header\": ");
     }

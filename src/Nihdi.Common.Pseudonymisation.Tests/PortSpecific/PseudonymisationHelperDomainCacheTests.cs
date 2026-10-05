@@ -13,10 +13,10 @@ namespace Nihdi.Common.Pseudonymisation.Tests.PortSpecific;
 [TestClass]
 public class PseudonymisationHelperDomainCacheTests
 {
-    private const string RequestedKey = "uhmep_v1";
+    private const string _requestedKey = "uhmep_v1";
 
     // eHealth answers with a `domain` field that differs from the key that was asked for.
-    private const string AnswerFromAnotherDomain =
+    private const string _answerFromAnotherDomain =
         "{\"domain\":\"other_v1\"," +
         "\"audience\":\"https://api-acpt.ehealth.fgov.be/pseudo/v1/domains/uhmep_v1\"," +
         "\"bufferSize\":8,\"crv\":\"P-521\",\"timeToLiveInTransit\":\"PT10M\"," +
@@ -25,10 +25,10 @@ public class PseudonymisationHelperDomainCacheTests
     [TestMethod]
     public void GetDomain_WhenEHealthAnswersWithAnotherDomainName_StillReturnsTheDomain()
     {
-        var client = new CountingPseudonymisationClient(AnswerFromAnotherDomain);
+        var client = new CountingPseudonymisationClient(_answerFromAnotherDomain);
         var helper = CreateHelper(client);
 
-        var domain = helper.GetDomain(RequestedKey).Result;
+        var domain = helper.GetDomain(_requestedKey).Result;
 
         Assert.IsNotNull(domain);
         Assert.AreEqual("other_v1", domain!.Key);
@@ -37,11 +37,11 @@ public class PseudonymisationHelperDomainCacheTests
     [TestMethod]
     public void GetDomain_CalledTwice_CachesUnderTheRequestedKey()
     {
-        var client = new CountingPseudonymisationClient(AnswerFromAnotherDomain);
+        var client = new CountingPseudonymisationClient(_answerFromAnotherDomain);
         var helper = CreateHelper(client);
 
-        helper.GetDomain(RequestedKey).Wait();
-        helper.GetDomain(RequestedKey).Wait();
+        helper.GetDomain(_requestedKey).Wait();
+        helper.GetDomain(_requestedKey).Wait();
 
         Assert.AreEqual(1, client.GetDomainCalls);
     }

@@ -15,20 +15,20 @@ namespace Nihdi.Common.Pseudonymisation.Tests.PortSpecific;
 [TestClass]
 public class MultiplePseudonymSingleElementTests
 {
-    private const string DomainKey = "test";
-    private const string TargetDomainKey = "target";
+    private const string _domainKey = "test";
+    private const string _targetDomainKey = "target";
 
     // Coordinates of a valid P-521 point, taken from the existing tests.
-    private const string X =
+    private const string _x =
         "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDEy" +
         "MzQ1Njc4OTEwDAAAAAAAAAAB";
 
-    private const string Y =
+    private const string _y =
         "ABxCeSYmGgumIwOuFyKmK1l8bilTjL+NK" +
         "Elpegi8mcsn3QB6grG5PHpgD8XCTPTGhDrT6HsGuEkEOVwZ23maSliV";
 
     // An eHealth error response: it has no `transitInfo`, so it is rejected.
-    private const string ProblemResponse =
+    private const string _problemResponse =
         "{\"type\":\"urn:problem-type:ehealth:pseudonymisation:invalid-input\"," +
         "\"title\":\"Invalid input\",\"status\":\"400\",\"detail\":\"boom\"}";
 
@@ -46,7 +46,7 @@ public class MultiplePseudonymSingleElementTests
     [TestMethod]
     public void ConvertTo_WithASingleElement_TurnsAnEHealthProblemIntoAnElement()
     {
-        var client = new RecordingPseudonymisationClient(ProblemResponse);
+        var client = new RecordingPseudonymisationClient(_problemResponse);
         var multiple = CreateSingleElementCollection(client, out var toDomain);
 
         var converted = ((IMultiplePseudonym)multiple).ConvertTo(toDomain).Result;
@@ -59,10 +59,10 @@ public class MultiplePseudonymSingleElementTests
         IPseudonymisationClient client,
         out IDomain toDomain)
     {
-        var domain = CreateDomain(DomainKey, client);
-        toDomain = CreateDomain(TargetDomainKey, client);
+        var domain = CreateDomain(_domainKey, client);
+        toDomain = CreateDomain(_targetDomainKey, client);
 
-        var pseudonym = domain.PseudonymFactory.FromXy(X, Y);
+        var pseudonym = domain.PseudonymFactory.FromXy(_x, _y);
         return new MultiplePseudonym(domain, new List<IPseudonym> { pseudonym });
     }
 
