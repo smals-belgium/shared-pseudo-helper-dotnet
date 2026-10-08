@@ -22,20 +22,7 @@ public class IdentifyASsinReturnedByRestAPI
             .Build()!;
     }
 
-    public void Synchronous()
-    {
-        // tag::sync[]
-        var ssin =
-            _pseudonymisationHelper
-            .GetDomain("uhmep_v1").Result
-            .PseudonymInTransitFactory
-            .FromSec1AndTransitInfo("...")
-            .Identify().Result
-            .AsString();
-        // end::sync[]
-    }
-
-    public async Task Asynchronous()
+    public async Task Demo()
     {
         // tag::async[]
         var domain =

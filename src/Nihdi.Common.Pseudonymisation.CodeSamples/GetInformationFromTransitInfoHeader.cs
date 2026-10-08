@@ -22,16 +22,17 @@ public class GetInformationFromTransitInfoHeader
             .Build()!;
     }
 
-    public void Synchronous()
+    public async Task Demo()
     {
-        // tag::sync[]
-        var pseudonymInTransit =
-            _pseudonymisationHelper
-                .GetDomain("uhmep_v1").Result
+        // tag::async[]
+        var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
+
+        var expiration =
+            domain
                 .PseudonymInTransitFactory
                 .FromSec1AndTransitInfo("...")
                 .GetTransitInfo()
                 .Header()["exp"];
-        // end::sync[]
+        // end::async[]
     }
 }

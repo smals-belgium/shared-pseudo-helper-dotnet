@@ -23,23 +23,7 @@ public class PseudonymisAesString
             .Build()!;
     }
 
-    public void Synchronous()
-    {
-        // tag::sync[]
-        byte[] secretKey = GeneraSecretKey(32);
-        var base64UrlEncodedKey = Base64UrlEncoder.Encode(secretKey);
-
-        var pseudonym =
-            _pseudonymisationHelper
-                .GetDomain("uhmep_v1")
-                .Result
-                .ValueFactory
-                .From(base64UrlEncodedKey)
-                .Pseudonymize().Result;
-        // end::sync[]
-    }
-
-    public async Task Asynchronous()
+    public async Task Demo()
     {
         // tag::async[]
         byte[] secretKey = GeneraSecretKey(32);

@@ -24,7 +24,7 @@ public class IdentifyMultipleSsinsReturnedByRestAPI
             .Build()!;
     }
 
-    public async Task Asynchronous()
+    public async Task Demo()
     {
         // tag::async[]
         var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");

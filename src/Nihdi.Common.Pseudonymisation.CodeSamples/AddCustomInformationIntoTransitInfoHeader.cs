@@ -22,19 +22,19 @@ public class AddCustomInformationIntoTransitInfoHeader
             .Build()!;
     }
 
-    public void Synchronous()
+    public async Task Demo()
     {
-        // tag::sync[]
+        // tag::async[]
         var transitInfoCustomizer = new HeaderTransitInfoCustomizer();
 
+        var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
+
         var pseudonymInTransit =
-            _pseudonymisationHelper
-                .GetDomain("uhmep_v1")
-                .Result
+            domain
                 .PseudonymFactory
                 .FromX("...")
                 .InTransit(transitInfoCustomizer);
-        // end::sync[]
+        // end::async[]
     }
 
     // tag::customizer[]

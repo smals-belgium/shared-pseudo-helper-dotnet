@@ -22,18 +22,18 @@ public class GeneratePseudoInTransitFromPseudoAtRest
             .Build()!;
     }
 
-    public void Synchronous()
+    public async Task Demo()
     {
-        // tag::sync[]
-        var domain = _pseudonymisationHelper.GetDomain("uhmep_v1");
+        // tag::async[]
+        var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
 
         var pseudonymInTransit =
-            domain.Result
-            .PseudonymFactory
-            .FromX("...")
-            .InTransit()
-            .AsString();
+            domain
+                .PseudonymFactory
+                .FromX("...")
+                .InTransit()
+                .AsString();
 
-        // end::sync[]
+        // end::async[]
     }
 }

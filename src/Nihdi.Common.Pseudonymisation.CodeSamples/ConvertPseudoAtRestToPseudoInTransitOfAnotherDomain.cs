@@ -23,19 +23,18 @@ public class ConvertPseudoAtRestToPseudoInTransitOfAnotherDomain
             .Build()!;
     }
 
-    public void Synchronous()
+    public async Task Demo()
     {
-        // tag::sync[]
-        var domain = _pseudonymisationHelper.GetDomain("uhmep_v1");
+        // tag::async[]
+        var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
 
-        var toDomain = _pseudonymisationHelper.GetDomain("ehealth_v1").Result;
+        var toDomain = await _pseudonymisationHelper.GetDomain("ehealth_v1");
 
         var pseudonymInTransit =
-            domain
-                .Result
+            await domain
                 .PseudonymFactory.FromX("...")
-                .ConvertTo(toDomain).Result;
+                .ConvertTo(toDomain);
 
-        // end::sync[]
+        // end::async[]
     }
 }

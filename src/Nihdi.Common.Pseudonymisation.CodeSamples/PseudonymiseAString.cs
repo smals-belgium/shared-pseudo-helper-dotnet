@@ -23,31 +23,30 @@ public class PseudonymiseAString
             .Build()!;
     }
 
-    public void DefaultEncoding()
+    public async Task DefaultEncoding()
     {
         // tag::PseudonymizeAString[]
+        var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
+
         var pseudonym =
-            _pseudonymisationHelper
-                .GetDomain("uhmep_v1")
-                .Result
+            await domain
                 .ValueFactory
                 .From("Cédric Dupont")
-                .Pseudonymize().Result;
+                .Pseudonymize();
 
         // end::PseudonymizeAString[]
     }
 
-    public void WithEncoding()
+    public async Task WithEncoding()
     {
         // tag::PseudonymizeAStringWithEncoding[]
+        var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
+
         var pseudonym =
-            _pseudonymisationHelper
-                .GetDomain("uhmep_v1")
-                .Result
+            await domain
                 .ValueFactory
                 .From("Cédric Dupont", Encoding.GetEncoding("ISO-8859-1"))
-                .Pseudonymize()
-                .Result;
+                .Pseudonymize();
         // end::PseudonymizeAStringWithEncoding[]
     }
 }
