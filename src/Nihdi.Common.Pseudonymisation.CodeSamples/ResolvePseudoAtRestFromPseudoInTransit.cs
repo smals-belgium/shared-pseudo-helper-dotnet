@@ -30,11 +30,6 @@ public class ResolvePseudoAtRestFromPseudoInTransit
         // tag::sync[]
         var domain = _pseudonymisationHelper.GetDomain("uhmep_v1").Result;
 
-        if (domain == null)
-        {
-            throw new InvalidOperationException("domain cannot be null");
-        }
-
         var pseudonymAtRest =
             domain
             .PseudonymInTransitFactory

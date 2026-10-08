@@ -36,7 +36,7 @@ public class MyPseudonymisationClient : IPseudonymisationClient
                              .PseudonymisationClient(null)
                              .Build() ?? throw new InvalidOperationException();
         // tag::retrievedomain[]
-        IDomain? domain = await pseudonymisationHelper.GetDomain("uhmep_v1");
+        IDomain domain = await pseudonymisationHelper.GetDomain("uhmep_v1");
         // end::retrievedomain[]
     }
 

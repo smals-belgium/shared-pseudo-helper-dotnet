@@ -30,7 +30,7 @@ public class AddCustomInformationIntoTransitInfoPayload
         var pseudonymInTransit =
             _pseudonymisationHelper
                 .GetDomain("uhmep_v1")
-                .Result?
+                .Result
                 .PseudonymFactory
                 .FromX("...")
                 .InTransit(transitInfoCustomizer);

@@ -27,7 +27,7 @@ public class GetInformationFromTransitInfoHeader
         // tag::sync[]
         var pseudonymInTransit =
             _pseudonymisationHelper
-                .GetDomain("uhmep_v1").Result?
+                .GetDomain("uhmep_v1").Result
                 .PseudonymInTransitFactory
                 .FromSec1AndTransitInfo("...")
                 .GetTransitInfo()

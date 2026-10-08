@@ -29,11 +29,6 @@ public class IdentifyMultipleSsinsReturnedByRestAPI
         // tag::async[]
         var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
 
-        if (domain == null)
-        {
-            throw new InvalidOperationException("domain cannot be null");
-        }
-
         var factory = domain.PseudonymInTransitFactory;
         var pseudonymsInTransit = new Collection<IPseudonymInTransit>
         {

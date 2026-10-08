@@ -27,13 +27,8 @@ public class GeneratePseudoInTransitFromPseudoAtRest
         // tag::sync[]
         var domain = _pseudonymisationHelper.GetDomain("uhmep_v1");
 
-        if (domain == null)
-        {
-            throw new InvalidOperationException("domain cannot be null");
-        }
-
         var pseudonymInTransit =
-            domain.Result?
+            domain.Result
             .PseudonymFactory
             .FromX("...")
             .InTransit()

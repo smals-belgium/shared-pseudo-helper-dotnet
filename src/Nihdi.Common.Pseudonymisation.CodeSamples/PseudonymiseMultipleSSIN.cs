@@ -29,8 +29,7 @@ public class PseudonymiseMultipleSSIN
         // tag::sync[]
         string[] values = new[] { "00000000097", "00000000196", "00000000295" };
 
-        IValueFactory valueFactory = _pseudonymisationHelper.GetDomain("uhmep_v1")?.Result?.ValueFactory
-            ?? throw new InvalidOperationException($"{nameof(valueFactory)} cannot be null");
+        IValueFactory valueFactory = _pseudonymisationHelper.GetDomain("uhmep_v1").Result.ValueFactory;
         IMultiplePseudonymInTransit multiplePseudonymInTransit =
             valueFactory
             .Multiple(values.Select(value => valueFactory.From(value)).ToList())

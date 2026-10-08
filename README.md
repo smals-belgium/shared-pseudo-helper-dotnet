@@ -288,7 +288,7 @@ public class MyPseudonymisationClient : IPseudonymisationClient
 Example that retrieve the `uhmep_v1` domain
 
 ``` cs
-        IDomain? domain = await pseudonymisationHelper.GetDomain("uhmep_v1");
+        IDomain domain = await pseudonymisationHelper.GetDomain("uhmep_v1");
 ```
 
 Main classes used by the library as parameter or return types are
@@ -782,7 +782,7 @@ Synchronous code
 ``` cs
   var pseudonym =
       _pseudonymisationHelper
-          .GetDomain("uhmep_v1").Result?
+          .GetDomain("uhmep_v1").Result
           .ValueFactory
           .From("00000000097")
           .Pseudonymize().Result;
@@ -793,11 +793,6 @@ Asynchronous code
 
 ``` cs
   var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
-
-  if (domain == null)
-  {
-      return null;
-  }
 
   var pseudonym = await domain.ValueFactory
           .From("00000000097")
@@ -813,9 +808,9 @@ Using default Charset (UTF-8)
 ``` cs
   var pseudonym =
       _pseudonymisationHelper
-          ?.GetDomain("uhmep_v1")
-          ?.Result
-          ?.ValueFactory
+          .GetDomain("uhmep_v1")
+          .Result
+          .ValueFactory
           .From("Cédric Dupont")
           .Pseudonymize().Result;
 ```
@@ -824,9 +819,9 @@ Using ISO-88659-1 Charset
 ``` cs
   var pseudonym =
       _pseudonymisationHelper
-          ?.GetDomain("uhmep_v1")
-          ?.Result
-          ?.ValueFactory
+          .GetDomain("uhmep_v1")
+          .Result
+          .ValueFactory
           .From("Cédric Dupont", Encoding.GetEncoding("ISO-8859-1"))
           .Pseudonymize()
           .Result;
@@ -854,9 +849,9 @@ Synchronous code
 
   var pseudonym =
       _pseudonymisationHelper
-          ?.GetDomain("uhmep_v1")
-          ?.Result
-          ?.ValueFactory
+          .GetDomain("uhmep_v1")
+          .Result
+          .ValueFactory
           .From(base64UrlEncodedKey)
           .Pseudonymize().Result;
 ```
@@ -869,13 +864,10 @@ Asynchronous code
 
   var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
 
-  if (domain != null)
-  {
-      var pseudonym = await domain
-          .ValueFactory
-          .From(base64UrlEncodedKey)
-          .Pseudonymize();
-  }
+  var pseudonym = await domain
+      .ValueFactory
+      .From(base64UrlEncodedKey)
+      .Pseudonymize();
 ```
 
 ## Pseudonymise multiple SSINs 
@@ -884,11 +876,6 @@ Synchronous code
 
 ``` cs
   var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
-
-  if (domain == null)
-  {
-      throw new InvalidOperationException("domain cannot be null");
-  }
 
   var multiplePseudonymInTransit =
       domain.ValueFactory
@@ -922,7 +909,7 @@ Synchronous code
 ``` cs
   var ssin =
       _pseudonymisationHelper
-      .GetDomain("uhmep_v1")?.Result?
+      .GetDomain("uhmep_v1").Result
       .PseudonymInTransitFactory
       .FromSec1AndTransitInfo("...")
       .Identify().Result
@@ -934,11 +921,6 @@ Asynchronous code
 ``` cs
   var domain =
       await _pseudonymisationHelper.GetDomain("uhmep_v1");
-
-  if (domain == null)
-  {
-      throw new InvalidOperationException("domain cannot be null");
-  }
 
   var value = await
       domain.PseudonymInTransitFactory
@@ -953,11 +935,6 @@ Asynchronous code
 
 ``` cs
   var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
-
-  if (domain == null)
-  {
-      throw new InvalidOperationException("domain cannot be null");
-  }
 
   var factory = domain.PseudonymInTransitFactory;
   var pseudonymsInTransit = new Collection<IPseudonymInTransit>
@@ -994,11 +971,6 @@ Synchronous code
 ``` cs
   var domain = _pseudonymisationHelper.GetDomain("uhmep_v1").Result;
 
-  if (domain == null)
-  {
-      throw new InvalidOperationException("domain cannot be null");
-  }
-
   var pseudonymAtRest =
       domain
       .PseudonymInTransitFactory
@@ -1023,13 +995,8 @@ Synchronous code
 ``` cs
   var domain = _pseudonymisationHelper.GetDomain("uhmep_v1");
 
-  if (domain == null)
-  {
-      throw new InvalidOperationException("domain cannot be null");
-  }
-
   var pseudonymInTransit =
-      domain.Result?
+      domain.Result
       .PseudonymFactory
       .FromX("...")
       .InTransit()
@@ -1044,16 +1011,13 @@ As a REST API, I want to convert a pseudonym of my domain in a pseudodym in tran
 In the following example, the pseudonym at rest from the domain `uhmep_v1` will be converted into a pseudonym in transit of the domain `ehealth_v1`. Be.Ict.Reuse .Synchronous code
 
 ``` cs
-  var domain = _pseudonymisationHelper.GetDomain("uhmep_v1")
-      ?? throw new InvalidOperationException("domain cannot be null");
+  var domain = _pseudonymisationHelper.GetDomain("uhmep_v1");
 
-
-  var toDomain = _pseudonymisationHelper.GetDomain("ehealth_v1").Result
-      ?? throw new InvalidOperationException("toDomain cannot be null");
+  var toDomain = _pseudonymisationHelper.GetDomain("ehealth_v1").Result;
 
   var pseudonymInTransit =
       domain
-          .Result?
+          .Result
           .PseudonymFactory.FromX("...")
           .ConvertTo(toDomain).Result;
 ```
@@ -1065,15 +1029,13 @@ As a REST API, I want to convert a pseudonym in transit of the domain `ehealth_v
 Synchronous
 
 ``` cs
-  var domain = _pseudonymisationHelper.GetDomain("uhmep_v1")
-      ?? throw new InvalidOperationException("domain cannot be null");
+  var domain = _pseudonymisationHelper.GetDomain("uhmep_v1");
 
-  var toDomain = _pseudonymisationHelper.GetDomain("uhmep_v1").Result
-      ?? throw new InvalidOperationException("toDomain cannot be null");
+  var toDomain = _pseudonymisationHelper.GetDomain("uhmep_v1").Result;
 
   var pseudonymInTransit =
       domain
-      .Result?
+      .Result
       .PseudonymInTransitFactory
       .FromSec1AndTransitInfo("...")
       .ConvertTo(toDomain);
@@ -1091,7 +1053,7 @@ Synchronous code
   var pseudonymInTransit =
       _pseudonymisationHelper
           .GetDomain("uhmep_v1")
-          .Result?
+          .Result
           .PseudonymFactory
           .FromX("...")
           .InTransit(transitInfoCustomizer);
@@ -1122,7 +1084,7 @@ Synchronous code
   var pseudonymInTransit =
       _pseudonymisationHelper
           .GetDomain("uhmep_v1")
-          .Result?
+          .Result
           .PseudonymFactory
           .FromX("...")
           .InTransit(transitInfoCustomizer);
@@ -1154,7 +1116,7 @@ Synchronous code
 ``` cs
   var pseudonymInTransit =
       _pseudonymisationHelper
-          .GetDomain("uhmep_v1").Result?
+          .GetDomain("uhmep_v1").Result
           .PseudonymInTransitFactory
           .FromSec1AndTransitInfo("...")
           .GetTransitInfo()

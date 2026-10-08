@@ -27,7 +27,7 @@ public class IdentifyASsinReturnedByRestAPI
         // tag::sync[]
         var ssin =
             _pseudonymisationHelper
-            .GetDomain("uhmep_v1")?.Result?
+            .GetDomain("uhmep_v1").Result
             .PseudonymInTransitFactory
             .FromSec1AndTransitInfo("...")
             .Identify().Result
@@ -40,11 +40,6 @@ public class IdentifyASsinReturnedByRestAPI
         // tag::async[]
         var domain =
             await _pseudonymisationHelper.GetDomain("uhmep_v1");
-
-        if (domain == null)
-        {
-            throw new InvalidOperationException("domain cannot be null");
-        }
 
         var value = await
             domain.PseudonymInTransitFactory

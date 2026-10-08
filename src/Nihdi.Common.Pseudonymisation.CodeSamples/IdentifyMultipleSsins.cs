@@ -29,11 +29,6 @@ public class IdentifyMultipleSsins
         // tag::sync[]
         var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
 
-        if (domain == null)
-        {
-            throw new InvalidOperationException("domain cannot be null");
-        }
-
         var multiplePseudonymInTransit =
             domain.ValueFactory
             .Multiple(

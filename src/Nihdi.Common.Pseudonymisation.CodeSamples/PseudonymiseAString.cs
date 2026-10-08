@@ -28,9 +28,9 @@ public class PseudonymiseAString
         // tag::PseudonymizeAString[]
         var pseudonym =
             _pseudonymisationHelper
-                ?.GetDomain("uhmep_v1")
-                ?.Result
-                ?.ValueFactory
+                .GetDomain("uhmep_v1")
+                .Result
+                .ValueFactory
                 .From("Cédric Dupont")
                 .Pseudonymize().Result;
 
@@ -42,9 +42,9 @@ public class PseudonymiseAString
         // tag::PseudonymizeAStringWithEncoding[]
         var pseudonym =
             _pseudonymisationHelper
-                ?.GetDomain("uhmep_v1")
-                ?.Result
-                ?.ValueFactory
+                .GetDomain("uhmep_v1")
+                .Result
+                .ValueFactory
                 .From("Cédric Dupont", Encoding.GetEncoding("ISO-8859-1"))
                 .Pseudonymize()
                 .Result;

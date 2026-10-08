@@ -31,7 +31,7 @@ public class AddCustomInformationIntoTransitInfoHeader
             _pseudonymisationHelper
                 .GetDomain("uhmep_v1")
                 .Result
-                ?.PseudonymFactory
+                .PseudonymFactory
                 .FromX("...")
                 .InTransit(transitInfoCustomizer);
         // end::sync[]

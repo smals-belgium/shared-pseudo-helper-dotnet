@@ -31,9 +31,9 @@ public class PseudonymisAesString
 
         var pseudonym =
             _pseudonymisationHelper
-                ?.GetDomain("uhmep_v1")
-                ?.Result
-                ?.ValueFactory
+                .GetDomain("uhmep_v1")
+                .Result
+                .ValueFactory
                 .From(base64UrlEncodedKey)
                 .Pseudonymize().Result;
         // end::sync[]
@@ -47,13 +47,10 @@ public class PseudonymisAesString
 
         var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
 
-        if (domain != null)
-        {
-            var pseudonym = await domain
-                .ValueFactory
-                .From(base64UrlEncodedKey)
-                .Pseudonymize();
-        }
+        var pseudonym = await domain
+            .ValueFactory
+            .From(base64UrlEncodedKey)
+            .Pseudonymize();
 
         // end::async[]
     }
