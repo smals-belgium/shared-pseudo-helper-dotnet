@@ -39,8 +39,8 @@ public sealed class PseudonymisationHelper
     private readonly IPseudonymisationClient _pseudonymisationClient;
     private readonly Func<string, string>? _privateKeySupplier;
     private readonly SecureRandom _secureRandom;
-    private readonly SemaphoreSlim _semaphore;
-    private readonly ConcurrentDictionary<string, IDomain> _domains;
+    private readonly ConcurrentDictionary<string, Task<IDomain>> _domains;
+    private readonly ConcurrentDictionary<string, Task<IDomain>> _previousDomains;
     private readonly ConcurrentDictionary<string, bool> _refreshableDomains;
 
     /// <summary>
@@ -88,8 +88,6 @@ public sealed class PseudonymisationHelper
 
         _secureRandom = CryptoServicesRegistrar.GetSecureRandom();
 
-        _semaphore = new SemaphoreSlim(1, 1);
-
         InitJwksSilently();
 
         var properties = new Dictionary<string, object?>
@@ -105,7 +103,8 @@ public sealed class PseudonymisationHelper
                 property.Key);
         }
 
-        _domains = new ConcurrentDictionary<string, IDomain>();
+        _domains = new ConcurrentDictionary<string, Task<IDomain>>();
+        _previousDomains = new ConcurrentDictionary<string, Task<IDomain>>();
     }
 
     /// <summary>
@@ -185,36 +184,45 @@ public sealed class PseudonymisationHelper
     /// <param name="domainKey">The domain key.</param>
     /// <returns>The refreshed domain. The task fails when the domain could not be refreshed.</returns>
     /// <remarks>
-    /// Always calls eHealth, through <see cref="IPseudonymisationClient.GetDomain(string)"/>, and
-    /// waits up to 5 seconds for the answer.
-    /// One refresh runs at a time for all domains together, so a slow answer delays the others.
+    /// Calls eHealth, through <see cref="IPseudonymisationClient.GetDomain(string)"/>, and waits
+    /// up to 5 seconds for the answer. The one exception: while a load of the same domain is
+    /// still running, that load is returned and eHealth is not called again.
+    /// Domains are refreshed independently: a slow answer for one does not delay the others.
+    /// Wait for the returned task to know whether the refresh worked. If it failed,
+    /// <see cref="GetDomain"/> keeps giving the domain loaded before, when there is one.
     /// </remarks>
-    public async Task<IDomain> RefreshDomain(string domainKey)
+    public Task<IDomain> RefreshDomain(string domainKey)
     {
-        await _semaphore.WaitAsync().ConfigureAwait(false);
-
-        try
+        // The first time the domain is asked, we create a new task
+        if (!_domains.TryGetValue(domainKey, out var domain))
         {
-            if (_pseudonymisationClient == null)
+            // GetOrAdd alone can run DomainTask more than once when two callers arrive together,
+            // and each run is a call to eHealth. The lock makes sure only one of them runs it.
+            lock (_domains)
             {
-                throw new ArgumentNullException(nameof(_pseudonymisationClient));
+                return _domains.GetOrAdd(domainKey, DomainTask);
             }
+        }
 
-            var rawDomain = await WithTimeout(_pseudonymisationClient.GetDomain(domainKey), _eHealthTimeout)
-                .ConfigureAwait(false);
-
-            var domain = CreateDomain(rawDomain);
-
-            // Store the domain under the requested key, not under the key returned by eHealth,
-            // which can be different.
-            _domains[domainKey] = domain;
-
+        // If the domain is still being initialized, we return the same task
+        if (!domain.IsCompleted)
+        {
             return domain;
         }
-        finally
+
+        // If the domain completed successfully (not faulted or canceled),
+        // store it in the previous domains to keep a usable domain to return
+        if (!domain.IsFaulted && !domain.IsCanceled)
         {
-            _semaphore.Release();
+            _previousDomains[domainKey] = domain;
         }
+
+        var newDomain = DomainTask(domainKey);
+        var replaced = _domains.TryUpdate(domainKey, newDomain, domain);
+
+        // If the domain was successfully replaced, return the new domain
+        // Otherwise return the current domain (which may have been updated by another thread)
+        return replaced ? newDomain : _domains[domainKey];
     }
 
     /// <summary>
@@ -224,18 +232,27 @@ public sealed class PseudonymisationHelper
     /// <param name="domainKey">The key of the domain to retrieve.</param>
     /// <returns>The domain, never null. The task fails when the domain could not be loaded.</returns>
     /// <remarks>
-    /// Calls eHealth only when the domain is not held yet; a domain already loaded is returned
+    /// Calls eHealth only the first time a domain is asked for; after that the domain is given
     /// from memory. The same call is therefore instant or a network round trip, depending on what
     /// the rest of the application did before.
+    /// While a refresh is running, or after a refresh that failed, the domain loaded before is
+    /// given instead, when there is one.
+    /// A load that failed is not tried again by this method: the failure is given back until
+    /// <see cref="RefreshDomain"/> is called.
     /// </remarks>
     public Task<IDomain> GetDomain(string domainKey)
     {
-        if (_domains.TryGetValue(domainKey, out var domain))
+        if (!_domains.TryGetValue(domainKey, out var domain))
         {
-            return Task.FromResult(domain);
+            return RefreshDomain(domainKey);
         }
 
-        return RefreshDomain(domainKey);
+        if (domain.IsCompleted && !domain.IsFaulted && !domain.IsCanceled)
+        {
+            return domain;
+        }
+
+        return _previousDomains.TryGetValue(domainKey, out var previousDomain) ? previousDomain : domain;
     }
 
     /// <summary>
@@ -301,6 +318,44 @@ public sealed class PseudonymisationHelper
     private static async Task<JsonWebKeySet> ParseJwks(Task<string> fetch)
     {
         return JsonWebKeySet.Create(await fetch.ConfigureAwait(false));
+    }
+
+    /// <summary>
+    /// Starts loading the given domain: asks eHealth for it and builds it from the answer.
+    /// </summary>
+    /// <param name="domainKey">The key of the domain to load.</param>
+    /// <returns>
+    /// A task that gives the domain. It fails when eHealth fails or takes more than 5 seconds,
+    /// or when the answer cannot be turned into a domain.
+    /// </returns>
+    private Task<IDomain> DomainTask(string domainKey)
+    {
+        var pending = LoadDomain(domainKey);
+
+        // Nobody is obliged to read this load: RefreshDomain drops it when another caller has
+        // replaced the domain first, and a caller may refresh without waiting for the result.
+        // Reading the failure here stops .NET from reporting it later as an unobserved task
+        // exception, far from its cause. Whoever does wait for the task still gets the failure.
+        _ = pending.ContinueWith(
+            task => _ = task.Exception,
+            CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default);
+
+        return pending;
+    }
+
+    private async Task<IDomain> LoadDomain(string domainKey)
+    {
+        if (_pseudonymisationClient == null)
+        {
+            throw new ArgumentNullException(nameof(_pseudonymisationClient));
+        }
+
+        var rawDomain = await WithTimeout(_pseudonymisationClient.GetDomain(domainKey), _eHealthTimeout)
+            .ConfigureAwait(false);
+
+        return CreateDomain(rawDomain);
     }
 
     private Domain CreateDomain(string rawDomain)
