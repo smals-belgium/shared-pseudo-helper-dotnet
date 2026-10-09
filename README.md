@@ -254,7 +254,7 @@ The first step after the initialization is to retrieve a domain.
 
 `GetDomain()` will use the `PseudonmymisationClient` you provided in the
 constructor to call eHealth Pseudonymisation service. This call is
-asynchronous and that's why it returns a `Task<string>`.
+asynchronous and that's why it returns a `Task<IDomain>`.
 
 Your `PseudonmymisationClient` must call eHealth Pseudonymisation
 service for the domains you need to encrypt/decrypt transitInfo. For the
@@ -933,7 +933,7 @@ As a user of a REST API, I want to identify (de-pseudonymise) the SSIN the REST 
 
 ## Resolve a pseudonym at rest from a pseudonym in transit 
 
-As a REST API, I want to get the pseudonym at rest (always the same for a citizen in a pseusonymisation domain) from a pseudonym in transit to find information about a citizen in my database.
+As a REST API, I want to get the pseudonym at rest (always the same for a citizen in a pseudonymisation domain) from a pseudonym in transit to find information about a citizen in my database.
 
 ``` cs
   var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
@@ -1078,6 +1078,74 @@ As a client of a REST API, I want to get the `exp` header property in the transi
           .GetTransitInfo()
           .Header()["exp"];
 ```
+
+# Preloading of the known domains
+
+If you don't want the first calls to `PseudonymisationHelper` to be slow because of the fetching of the domain, you can preload the domains your application knows by calling `await GetDomain("yourdomain_v1")`.
+
+If the call throws an exception, you can decide to prevent the application from starting (because you suspect the problem is caused by a wrong configuration) or to continue with unloaded domains.
+
+If you decide to continue the deployment, you should asynchronously and periodically (once per minute, for example) try to reload the domain by calling `await RefreshDomain("yourdomain_v1")` until it does not throw any exception.
+
+Please note that a load that failed is kept in memory: `GetDomain` gives the same exception back, without calling eHealth again. Calling `GetDomain` again is therefore not a retry; only `RefreshDomain` calls eHealth again. Leave a delay between two tries, because each of them is a request to eHealth.
+
+Preloading example with retry
+
+``` cs
+  try
+  {
+      await _pseudonymisationHelper.GetDomain("yourdomain_v1");
+  }
+  catch (Exception e)
+  {
+      _logger.LogWarning(e, "Domain preloading failed, will retry periodically");
+
+      // Schedule asynchronous periodic retry using RefreshDomain() here
+  }
+```
+
+# Refreshing the domains you own every 6 hours
+
+Because of the domain secret keys rotation, eHealth requires you to refresh the domains you own every 6 hours.
+
+To achieve this, you can call `await RefreshDomain("yourdomain_v1")` for every domain you own.
+
+`RefreshableDomains` gives the set of domains you own that `PseudonymisationHelper` has previously loaded. A domain you own that has never been loaded is not in this set.
+
+Always use `await` when you call `RefreshDomain`: when the refresh fails, that is where the exception arrives. If you cannot use `await`, block on the returned task with `.GetAwaiter().GetResult()`, as explained in "If you cannot use `await`". If you start the refresh and ignore the task it returns, a failed refresh can go unnoticed: no exception reaches your code.
+
+While a refresh is running, and after a refresh that failed, `GetDomain` keeps giving the domain loaded before.
+
+If the refresh fails, you should asynchronously and periodically (once per minute, for example) retry by calling `await RefreshDomain("yourdomain_v1")` until it does not throw any exception.
+
+Refreshing example with retry
+
+``` cs
+  foreach (var domainKey in _pseudonymisationHelper.RefreshableDomains)
+  {
+      try
+      {
+          await _pseudonymisationHelper.RefreshDomain(domainKey);
+      }
+      catch (Exception e)
+      {
+          _logger.LogWarning(e, "Refresh of the domain {DomainKey} failed, will retry periodically", domainKey);
+
+          // Schedule asynchronous periodic retry using RefreshDomain() here
+      }
+  }
+```
+
+Warning
+
+If a domain is not refreshed within the expected timeframe, the secret keys may become outdated, and operations on pseudonyms in transit for this domain may fail.
+
+Important
+
+If the library throws an `UnknownKidException`, it can be caused by:
+
+- **The domain has not been refreshed in time**: ensure you refresh your domains every 6 hours.
+- **The received pseudonym in transit was created with an expired secret key**: ask the sender to refresh their domain and not to reuse expired pseudonyms in transit.
 
 # Caching 
 

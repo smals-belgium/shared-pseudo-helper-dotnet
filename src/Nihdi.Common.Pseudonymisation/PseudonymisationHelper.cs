@@ -188,7 +188,7 @@ public sealed class PseudonymisationHelper
     /// up to 5 seconds for the answer. The one exception: while a load of the same domain is
     /// still running, that load is returned and eHealth is not called again.
     /// Domains are refreshed independently: a slow answer for one does not delay the others.
-    /// Wait for the returned task to know whether the refresh worked. If it failed,
+    /// Use <c>await</c> on the returned task to know whether the refresh worked. If it failed,
     /// <see cref="GetDomain"/> keeps giving the domain loaded before, when there is one.
     /// </remarks>
     public Task<IDomain> RefreshDomain(string domainKey)
