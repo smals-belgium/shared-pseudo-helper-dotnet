@@ -29,16 +29,15 @@ public class MultipleValuePseudonymizeTests
         var client = new RecordingPseudonymisationClient(answerFromEHealth.Task);
         var multiple = CreateCollection(client, valueCount);
 
-        // Pseudonymize() runs on another thread, so that this test fails instead of hanging when
-        // the call waits for eHealth.
+        // In this test eHealth never answers. A Pseudonymize() that blocks its calling thread until
+        // the answer arrives would therefore never return, and the test run would hang instead of
+        // failing. So the call runs on another thread, and this thread blocks on it with Wait()
+        // for at most _returnTimeout: past that delay, the test fails with a clear message.
         Task<IMultiplePseudonymInTransit>? returned = null;
         var call = Task.Run(() => { returned = multiple.Pseudonymize(); });
-        if (!call.Wait(_returnTimeout))
-        {
-            // Releases the thread that is still waiting inside Pseudonymize().
-            answerFromEHealth.TrySetException(new NotSupportedException("end of test"));
-            Assert.Fail("Pseudonymize() did not return: it holds the calling thread until eHealth answers.");
-        }
+        Assert.IsTrue(
+            call.Wait(_returnTimeout),
+            "Pseudonymize() did not return: it holds the calling thread until eHealth answers.");
 
         // The answer of eHealth is left pending: completing it here, even to clean up, would run
         // the rest of Pseudonymize() on a made-up answer.
