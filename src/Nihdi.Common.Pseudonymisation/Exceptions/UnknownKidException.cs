@@ -11,7 +11,7 @@ namespace Nihdi.Common.Pseudonymisation.Exceptions;
 /// This exception is typically thrown during cryptographic operations when attempting to use a key that cannot be found
 /// or when trying to decrypt data using an unrecognized key identifier.
 /// </remarks>
-internal class UnknownKidException : InvalidTransitInfoException
+public class UnknownKidException : InvalidTransitInfoException
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="UnknownKidException"/> class with the specified Key ID.
