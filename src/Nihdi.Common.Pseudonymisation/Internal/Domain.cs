@@ -191,13 +191,13 @@ public class Domain : IDomain
     public PseudonymInTransitFactory PseudonymInTransitFactory => _pseudonymInTransitFactory;
 
     /// <summary>
-    /// Creates a payload string from a pseudonym, automatically extracting transit information if available.
+    /// Creates a payload string from a pseudonym, without transit information.
     /// </summary>
     /// <param name="pseudonym">The pseudonym to create a payload from.</param>
     /// <returns>A JSON string representation of the pseudonym payload.</returns>
     internal string CreatePayloadString(IPseudonym pseudonym)
     {
-        return CreatePayloadString(pseudonym, (pseudonym as IPseudonymInTransit)?.GetTransitInfo().ToString() ?? null);
+        return CreatePayload(pseudonym, null);
     }
 
     /// <summary>
