@@ -34,7 +34,7 @@ public class MultipleValue : MultiplePoint<IValue>, IMultipleValue
     /// <inheritdoc/>
     public Task<IMultiplePseudonymInTransit> Pseudonymize()
     {
-        return Task.FromResult((IMultiplePseudonymInTransit)this.PseudonymizeImpl().Result);
+        return this.PseudonymizeImpl();
     }
 
     /// <inheritdoc/>
@@ -60,11 +60,11 @@ public class MultipleValue : MultiplePoint<IValue>, IMultipleValue
         return value;
     }
 
-    private Task<MultiplePseudonymInTransit> PseudonymizeImpl()
+    private Task<IMultiplePseudonymInTransit> PseudonymizeImpl()
     {
         if (this.Points.IsNullOrEmpty())
         {
-            return Task.FromResult(new MultiplePseudonymInTransit(this.Domain));
+            return Task.FromResult<IMultiplePseudonymInTransit>(new MultiplePseudonymInTransit(this.Domain));
         }
 
         var nbValues = this.Points.Count;
@@ -81,7 +81,7 @@ public class MultipleValue : MultiplePoint<IValue>, IMultipleValue
             // would contain the task itself. If the call failed, `task.Result` rethrows the error.
             return value.Pseudonymize()
                     .ContinueWith(task =>
-                    new MultiplePseudonymInTransit(this.Domain, new List<object> { task.Result }));
+                    (IMultiplePseudonymInTransit)new MultiplePseudonymInTransit(this.Domain, new List<object> { task.Result }));
         }
 
         var randoms = new List<BigInteger>(nbValues);
@@ -124,7 +124,7 @@ public class MultipleValue : MultiplePoint<IValue>, IMultipleValue
                     }
                 }
 
-                return pseudonymsInTransit;
+                return (IMultiplePseudonymInTransit)pseudonymsInTransit;
             });
     }
 }

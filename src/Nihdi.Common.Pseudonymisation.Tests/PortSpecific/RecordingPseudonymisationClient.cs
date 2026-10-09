@@ -13,7 +13,7 @@ namespace Nihdi.Common.Pseudonymisation.Tests.PortSpecific;
 /// </summary>
 internal sealed class RecordingPseudonymisationClient : IPseudonymisationClient
 {
-    private readonly string? _response;
+    private readonly Task<string>? _response;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RecordingPseudonymisationClient"/> class.
@@ -23,6 +23,18 @@ internal sealed class RecordingPseudonymisationClient : IPseudonymisationClient
     /// tests that only check <see cref="Calls"/>.
     /// </param>
     public RecordingPseudonymisationClient(string? response = null)
+    {
+        _response = response != null ? Task.FromResult(response) : null;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="RecordingPseudonymisationClient"/> class.
+    /// </summary>
+    /// <param name="response">
+    /// The task returned by every endpoint. A test passes a task that is not completed to stand
+    /// for an eHealth that has not answered yet.
+    /// </param>
+    public RecordingPseudonymisationClient(Task<string> response)
     {
         _response = response;
     }
@@ -60,8 +72,6 @@ internal sealed class RecordingPseudonymisationClient : IPseudonymisationClient
             Payloads.Add(payload);
         }
 
-        return _response != null
-            ? Task.FromResult(_response)
-            : Task.FromException<string>(new NotSupportedException(name));
+        return _response ?? Task.FromException<string>(new NotSupportedException(name));
     }
 }
