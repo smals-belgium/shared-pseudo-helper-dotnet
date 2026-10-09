@@ -115,7 +115,7 @@ public class MultiplePseudonym : MultiplePoint<IPseudonym>, IMultiplePseudonym
             .ContinueWith(t =>
             {
                 var response = JObject.Parse(t.Result);
-                var outputs = response["outputs"] as JObject
+                var outputs = response["outputs"] as JArray
                     ?? throw new InvalidOperationException("outputs fields is null");
                 var pseudonymsInTransit = new MultiplePseudonymInTransit(toDomain);
                 var pseudonymInTransitFactory =
@@ -126,7 +126,7 @@ public class MultiplePseudonym : MultiplePoint<IPseudonym>, IMultiplePseudonym
                     {
                         pseudonymsInTransit.Add(
                             pseudonymInTransitFactory.FromResponse(
-                                outputs?[i] as JObject ?? throw new ArgumentNullException(string.Empty),
+                                outputs[i] as JObject ?? throw new ArgumentNullException(string.Empty),
                                 randoms[i]));
                     }
                     catch (EHealthProblemException ex)

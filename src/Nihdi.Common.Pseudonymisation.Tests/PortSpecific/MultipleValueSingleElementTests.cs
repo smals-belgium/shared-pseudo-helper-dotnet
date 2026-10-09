@@ -60,8 +60,9 @@ public class MultipleValueSingleElementTests
         var multiple = CreateSingleElementCollection(client);
 
         // If a Task were stored instead of its result, the error would be hidden and the
-        // collection returned as if the call had worked.
-        Assert.ThrowsException<AggregateException>(() => multiple.Pseudonymize());
+        // collection returned as if the call had worked. The error is carried by the returned
+        // task: Pseudonymize() itself does not wait for eHealth.
+        Assert.ThrowsException<AggregateException>(() => multiple.Pseudonymize().Wait());
     }
 
     [TestMethod]

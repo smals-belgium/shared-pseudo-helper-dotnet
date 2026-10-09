@@ -34,7 +34,7 @@ public class MultipleValue : MultiplePoint<IValue>, IMultipleValue
     /// <inheritdoc/>
     public Task<IMultiplePseudonymInTransit> Pseudonymize()
     {
-        return Task.FromResult((IMultiplePseudonymInTransit)this.PseudonymizeImpl().Result);
+        return this.PseudonymizeImpl();
     }
 
     /// <inheritdoc/>
@@ -60,11 +60,11 @@ public class MultipleValue : MultiplePoint<IValue>, IMultipleValue
         return value;
     }
 
-    private Task<MultiplePseudonymInTransit> PseudonymizeImpl()
+    private Task<IMultiplePseudonymInTransit> PseudonymizeImpl()
     {
         if (this.Points.IsNullOrEmpty())
         {
-            return Task.FromResult(new MultiplePseudonymInTransit(this.Domain));
+            return Task.FromResult<IMultiplePseudonymInTransit>(new MultiplePseudonymInTransit(this.Domain));
         }
 
         var nbValues = this.Points.Count;
@@ -81,7 +81,7 @@ public class MultipleValue : MultiplePoint<IValue>, IMultipleValue
             // would contain the task itself. If the call failed, `task.Result` rethrows the error.
             return value.Pseudonymize()
                     .ContinueWith(task =>
-                    new MultiplePseudonymInTransit(this.Domain, new List<object> { task.Result }));
+                    (IMultiplePseudonymInTransit)new MultiplePseudonymInTransit(this.Domain, new List<object> { task.Result }));
         }
 
         var randoms = new List<BigInteger>(nbValues);
@@ -105,7 +105,7 @@ public class MultipleValue : MultiplePoint<IValue>, IMultipleValue
             .ContinueWith(rawResponse =>
             {
                 var response = JObject.Parse(rawResponse.Result);
-                var outputs = response["outputs"] as JObject
+                var outputs = response["outputs"] as JArray
                     ?? throw new InvalidOperationException("outputs fields is null");
                 var pseudonymsInTransit = new MultiplePseudonymInTransit(this.Domain);
                 var pseudonymInTransitFactory = this.Domain.PseudonymInTransitFactory;
@@ -115,7 +115,7 @@ public class MultipleValue : MultiplePoint<IValue>, IMultipleValue
                     {
                         pseudonymsInTransit.Add(
                             pseudonymInTransitFactory.FromResponse(
-                                outputs?[i.ToString()] as JObject ?? throw new ArgumentNullException(string.Empty),
+                                outputs[i] as JObject ?? throw new ArgumentNullException(string.Empty),
                                 randoms[i]));
                     }
                     catch (EHealthProblemException ex)
@@ -124,7 +124,7 @@ public class MultipleValue : MultiplePoint<IValue>, IMultipleValue
                     }
                 }
 
-                return pseudonymsInTransit;
+                return (IMultiplePseudonymInTransit)pseudonymsInTransit;
             });
     }
 }
