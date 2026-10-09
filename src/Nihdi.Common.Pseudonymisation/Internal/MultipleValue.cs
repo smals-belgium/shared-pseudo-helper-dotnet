@@ -105,7 +105,7 @@ public class MultipleValue : MultiplePoint<IValue>, IMultipleValue
             .ContinueWith(rawResponse =>
             {
                 var response = JObject.Parse(rawResponse.Result);
-                var outputs = response["outputs"] as JObject
+                var outputs = response["outputs"] as JArray
                     ?? throw new InvalidOperationException("outputs fields is null");
                 var pseudonymsInTransit = new MultiplePseudonymInTransit(this.Domain);
                 var pseudonymInTransitFactory = this.Domain.PseudonymInTransitFactory;
@@ -115,7 +115,7 @@ public class MultipleValue : MultiplePoint<IValue>, IMultipleValue
                     {
                         pseudonymsInTransit.Add(
                             pseudonymInTransitFactory.FromResponse(
-                                outputs?[i.ToString()] as JObject ?? throw new ArgumentNullException(string.Empty),
+                                outputs[i] as JObject ?? throw new ArgumentNullException(string.Empty),
                                 randoms[i]));
                     }
                     catch (EHealthProblemException ex)

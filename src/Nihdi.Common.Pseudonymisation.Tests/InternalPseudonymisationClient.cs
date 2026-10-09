@@ -163,8 +163,7 @@ internal class InternalPseudonymisationClient : IPseudonymisationClient
             throw new InvalidOperationException("internalPseudonymisationHelper is null");
         }
 
-        // Use JObject for outputs, NOT JArray
-        var outputs = new JObject();
+        var outputs = new JArray();
         var response = new JObject();
         response.Add("id", new JValue(Guid.NewGuid().ToString()));
         response.Add("domain", new JValue(domainKey));
@@ -192,8 +191,7 @@ internal class InternalPseudonymisationClient : IPseudonymisationClient
                     outputObj.Add("y", new JValue(pseudonymInTransit?.Y()));
                     outputObj.Add("transitInfo", new JValue(pseudonymInTransit?.GetTransitInfo().AsString()));
 
-                    // Use numeric string as key for JObject
-                    outputs.Add(i.ToString(), outputObj);
+                    outputs.Add(outputObj);
                 }).Wait();
         }
 
