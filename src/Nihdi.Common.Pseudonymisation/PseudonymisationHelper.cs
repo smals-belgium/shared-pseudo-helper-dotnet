@@ -487,7 +487,13 @@ public sealed class PseudonymisationHelper
         // expects a value parameter, so we give it a bool.)
         if (isKnownJku && _refreshableDomains.TryAdd(domainKey, false))
         {
-            _unmodifiableCopyOfRefreshDomains = _refreshableDomains.Keys.ToImmutableHashSet();
+            // Two domains can be loaded at the same time. Without the lock, the one that took its
+            // copy first can publish it last: its copy does not hold the other domain, which then
+            // disappears from RefreshableDomains and is never refreshed by the application.
+            lock (_refreshableDomains)
+            {
+                _unmodifiableCopyOfRefreshDomains = _refreshableDomains.Keys.ToImmutableHashSet();
+            }
         }
 
         return domain;
