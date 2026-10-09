@@ -14,16 +14,16 @@ namespace Nihdi.Common.Pseudonymisation.Tests.PortSpecific;
 [TestClass]
 public class TransitInfoScalarRoundTripTests
 {
-    private const string DomainKey = "test";
-    private const string Audience = "https://api-acpt.ehealth.fgov.be/pseudo/v1/domains/test";
-    private const string ActiveKid = "2026-09";
+    private const string _domainKey = "test";
+    private const string _audience = "https://api-acpt.ehealth.fgov.be/pseudo/v1/domains/test";
+    private const string _activeKid = "2026-09";
 
     // A valid P-521 point, taken from the existing tests.
-    private const string X =
+    private const string _x =
         "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDEy" +
         "MzQ1Njc4OTEwDAAAAAAAAAAB";
 
-    private const string Y =
+    private const string _y =
         "ABxCeSYmGgumIwOuFyKmK1l8bilTjL+NK" +
         "Elpegi8mcsn3QB6grG5PHpgD8XCTPTGhDrT6HsGuEkEOVwZ23maSliV";
 
@@ -47,7 +47,7 @@ public class TransitInfoScalarRoundTripTests
         Assert.AreEqual(scalar, scalarFromTransitInfo);
 
         var pseudonymInTransit = domain.PseudonymInTransitFactory
-            .FromXYAndTransitInfo(X, Y, transitInfo.AsString());
+            .FromXYAndTransitInfo(_x, _y, transitInfo.AsString());
 
         // AtRest(false) skips the iat/exp date checks, which this test does not need.
         var atRest = pseudonymInTransit.AtRest(false);
@@ -78,8 +78,8 @@ public class TransitInfoScalarRoundTripTests
     {
         var curve = EcCurveNames.GetCurveFromString("P-521");
         var point = curve.CreatePoint(
-            new BigInteger(1, Convert.FromBase64String(X)),
-            new BigInteger(1, Convert.FromBase64String(Y)));
+            new BigInteger(1, Convert.FromBase64String(_x)),
+            new BigInteger(1, Convert.FromBase64String(_y)));
 
         return Convert.ToBase64String(point.Multiply(scalar).Normalize().XCoord.GetEncoded());
     }
@@ -94,17 +94,17 @@ public class TransitInfoScalarRoundTripTests
 
         var secretKeys = new Dictionary<string, SymmetricSecurityKey>
         {
-            [ActiveKid] = new SymmetricSecurityKey(secretKey),
+            [_activeKid] = new SymmetricSecurityKey(secretKey),
         };
 
         return new Domain(
-            DomainKey,
+            _domainKey,
             "P-521",
             EcCurveNames.GetCurveFromString("P-521"),
-            Audience,
+            _audience,
             8,
             secretKeys,
-            ActiveKid,
+            _activeKid,
             JweContentEncryptionAlgorithm.A256GCM,
             TimeSpan.FromMinutes(10),
             null,

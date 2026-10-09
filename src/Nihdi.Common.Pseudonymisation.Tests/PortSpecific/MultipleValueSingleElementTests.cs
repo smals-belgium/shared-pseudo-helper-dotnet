@@ -13,18 +13,18 @@ namespace Nihdi.Common.Pseudonymisation.Tests.PortSpecific;
 [TestClass]
 public class MultipleValueSingleElementTests
 {
-    private const string DomainKey = "test";
+    private const string _domainKey = "test";
 
     // Coordinates of a valid P-521 point, taken from the existing tests.
-    private const string X =
+    private const string _x =
         "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDEy" +
         "MzQ1Njc4OTEwDAAAAAAAAAAB";
 
-    private const string Y =
+    private const string _y =
         "ABxCeSYmGgumIwOuFyKmK1l8bilTjL+NK" +
         "Elpegi8mcsn3QB6grG5PHpgD8XCTPTGhDrT6HsGuEkEOVwZ23maSliV";
 
-    private const string TransitInfoRaw =
+    private const string _transitInfoRaw =
         "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwia2lkIjoiMjAyMi0xMiIsImF1" +
         "ZCI6Imh0dHBzOi8vYXBpLWludC5laGVhbHRoLmZnb3YuYmUvcHNldWRvL3YxL2Rv" +
         "bWFpbnMvdWhtZXBfdjEifQ..osrl3KS4nkheJvcJ.pXN4Asfg8RGtsoV529YoFRW" +
@@ -34,14 +34,14 @@ public class MultipleValueSingleElementTests
         "WR9TYZNj9NNyU9eeSDk9UsXJ8cugpvStu6oFOCbW4520fl6h5oaJ7Rye3.IEd7uL" +
         "w-ICHAwqIzfrjOFw";
 
-    private const string PseudonymizeResponse =
-        "{\"domain\":\"" + DomainKey + "\",\"x\":\"" + X + "\",\"y\":\"" + Y +
-        "\",\"transitInfo\":\"" + TransitInfoRaw + "\"}";
+    private const string _pseudonymizeResponse =
+        "{\"domain\":\"" + _domainKey + "\",\"x\":\"" + _x + "\",\"y\":\"" + _y +
+        "\",\"transitInfo\":\"" + _transitInfoRaw + "\"}";
 
     [TestMethod]
     public void Pseudonymize_WithASingleElement_YieldsAPseudonymInTransitAndNotATask()
     {
-        var client = new RecordingPseudonymisationClient(PseudonymizeResponse);
+        var client = new RecordingPseudonymisationClient(_pseudonymizeResponse);
         var multiple = CreateSingleElementCollection(client);
 
         var pseudonymsInTransit = multiple.Pseudonymize().Result;
@@ -67,7 +67,7 @@ public class MultipleValueSingleElementTests
     [TestMethod]
     public void Pseudonymize_WithASingleElement_CallsTheSingleEndpointOnly()
     {
-        var client = new RecordingPseudonymisationClient(PseudonymizeResponse);
+        var client = new RecordingPseudonymisationClient(_pseudonymizeResponse);
         var multiple = CreateSingleElementCollection(client);
 
         multiple.Pseudonymize().Wait();
@@ -79,7 +79,7 @@ public class MultipleValueSingleElementTests
     {
         // `crv` must be set, because building the request payload needs it.
         var domain = new Domain(
-            DomainKey,
+            _domainKey,
             "P-521",
             EcCurveNames.GetCurveFromString("P-521"),
             null,

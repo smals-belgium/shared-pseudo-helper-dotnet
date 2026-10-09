@@ -254,7 +254,7 @@ The first step after the initialization is to retrieve a domain.
 
 `GetDomain()` will use the `PseudonmymisationClient` you provided in the
 constructor to call eHealth Pseudonymisation service. This call is
-asynchronous and that's why it returns a `Task<string>`.
+asynchronous and that's why it returns a `Task<IDomain>`.
 
 Your `PseudonmymisationClient` must call eHealth Pseudonymisation
 service for the domains you need to encrypt/decrypt transitInfo. For the
@@ -288,7 +288,7 @@ public class MyPseudonymisationClient : IPseudonymisationClient
 Example that retrieve the `uhmep_v1` domain
 
 ``` cs
-        IDomain? domain = await pseudonymisationHelper.GetDomain("uhmep_v1");
+        IDomain domain = await pseudonymisationHelper.GetDomain("uhmep_v1");
 ```
 
 Main classes used by the library as parameter or return types are
@@ -768,36 +768,36 @@ public interface IPseudonymInTransit : IPoint
 These examples demonstrate how to use PseudonymisationHelper for common
 use cases.
 
-Most of the use cases can be done synchronously or asynchronously. To
-avoid writing too much code here, we will provide few examples in both
-synchronous and asynchronous ways.
+All the examples use `await`: every operation of the library that calls
+eHealth returns a `Task`.
+
+**If you cannot use `await`**
+
+Some code cannot be asynchronous: a constructor, `Application_Start`, an
+ASMX web service, a `MembershipProvider`, or an existing code base that
+is synchronous from top to bottom. There, you have to block until the
+task ends. Be aware that:
+
+- the calling thread does nothing else while it waits;
+- in a classic ASP.NET application (.NET Framework) or in a desktop
+  application (WinForms, WPF), blocking can freeze the application for
+  good, when an `await` further down needs the very thread you are
+  blocking;
+- `.GetAwaiter().GetResult()` is preferable to `.Result`: when the call
+  fails, you get the original exception instead of an
+  `AggregateException` wrapping it.
+
+``` cs
+  var domain = _pseudonymisationHelper.GetDomain("uhmep_v1").GetAwaiter().GetResult();
+```
 
 ## Pseudonymise an SSIN 
 
 In this example, as a user of a pseudonymised REST API, I want to
 pseudonymise a citizen's SSIN before sending my request to the REST API.
 
-Synchronous code
-
-``` cs
-  var pseudonym =
-      _pseudonymisationHelper
-          .GetDomain("uhmep_v1").Result?
-          .ValueFactory
-          .From("00000000097")
-          .Pseudonymize().Result;
-```
-::::
-
-Asynchronous code
-
 ``` cs
   var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
-
-  if (domain == null)
-  {
-      return null;
-  }
 
   var pseudonym = await domain.ValueFactory
           .From("00000000097")
@@ -811,25 +811,24 @@ eHealth asks not to pseudonymise values that exceed 32 bytes. Depending on the e
 Using default Charset (UTF-8)
 
 ``` cs
+  var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
+
   var pseudonym =
-      _pseudonymisationHelper
-          ?.GetDomain("uhmep_v1")
-          ?.Result
-          ?.ValueFactory
+      await domain
+          .ValueFactory
           .From("Cédric Dupont")
-          .Pseudonymize().Result;
+          .Pseudonymize();
 ```
 Using ISO-88659-1 Charset
 
 ``` cs
+  var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
+
   var pseudonym =
-      _pseudonymisationHelper
-          ?.GetDomain("uhmep_v1")
-          ?.Result
-          ?.ValueFactory
+      await domain
+          .ValueFactory
           .From("Cédric Dupont", Encoding.GetEncoding("ISO-8859-1"))
-          .Pseudonymize()
-          .Result;
+          .Pseudonymize();
 ```
 
 **Note**
@@ -846,57 +845,30 @@ the other user must also receive the encryption key. The REST API should
 not be able to decrypt the information, so the encryption key must also
 be pseudonymised.
 
-Synchronous code
-
-``` cs
-  byte[] secretKey = GeneraSecretKey(32);
-  var base64UrlEncodedKey = Base64UrlEncoder.Encode(secretKey);
-
-  var pseudonym =
-      _pseudonymisationHelper
-          ?.GetDomain("uhmep_v1")
-          ?.Result
-          ?.ValueFactory
-          .From(base64UrlEncodedKey)
-          .Pseudonymize().Result;
-```
-
-Asynchronous code
-
 ``` cs
   byte[] secretKey = GeneraSecretKey(32);
   var base64UrlEncodedKey = Base64UrlEncoder.Encode(secretKey);
 
   var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
 
-  if (domain != null)
-  {
-      var pseudonym = await domain
-          .ValueFactory
-          .From(base64UrlEncodedKey)
-          .Pseudonymize();
-  }
+  var pseudonym = await domain
+      .ValueFactory
+      .From(base64UrlEncodedKey)
+      .Pseudonymize();
 ```
 
 ## Pseudonymise multiple SSINs 
 
-Synchronous code
-
 ``` cs
   var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
 
-  if (domain == null)
-  {
-      throw new InvalidOperationException("domain cannot be null");
-  }
-
   var multiplePseudonymInTransit =
-      domain.ValueFactory
-      .Multiple(
-          new[] { "00000000097", "00000000196", "00000000295" }
-          .Select(ssin => domain.ValueFactory.From(ssin))
-      .ToArray())
-      .Pseudonymize().Result;
+      await domain.ValueFactory
+          .Multiple(
+              new[] { "00000000097", "00000000196", "00000000295" }
+                  .Select(ssin => domain.ValueFactory.From(ssin))
+                  .ToArray())
+          .Pseudonymize();
 
   for (int i = 0; i < multiplePseudonymInTransit.Size(); i++)
   {
@@ -917,28 +889,9 @@ Synchronous code
 
 As a user of a REST API, I want to identify (de-pseudonymise) the SSIN the REST API sent to me.
 
-Synchronous code
-
-``` cs
-  var ssin =
-      _pseudonymisationHelper
-      .GetDomain("uhmep_v1")?.Result?
-      .PseudonymInTransitFactory
-      .FromSec1AndTransitInfo("...")
-      .Identify().Result
-      .AsString();
-```
-
-Asynchronous code
-
 ``` cs
   var domain =
       await _pseudonymisationHelper.GetDomain("uhmep_v1");
-
-  if (domain == null)
-  {
-      throw new InvalidOperationException("domain cannot be null");
-  }
 
   var value = await
       domain.PseudonymInTransitFactory
@@ -949,15 +902,8 @@ Asynchronous code
 ```
 ## Identify multiple SSINs returned by a REST API 
 
-Asynchronous code
-
 ``` cs
   var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
-
-  if (domain == null)
-  {
-      throw new InvalidOperationException("domain cannot be null");
-  }
 
   var factory = domain.PseudonymInTransitFactory;
   var pseudonymsInTransit = new Collection<IPseudonymInTransit>
@@ -987,17 +933,10 @@ Asynchronous code
 
 ## Resolve a pseudonym at rest from a pseudonym in transit 
 
-As a REST API, I want to get the pseudonym at rest (always the same for a citizen in a pseusonymisation domain) from a pseudonym in transit to find information about a citizen in my database.
-
-Synchronous code
+As a REST API, I want to get the pseudonym at rest (always the same for a citizen in a pseudonymisation domain) from a pseudonym in transit to find information about a citizen in my database.
 
 ``` cs
-  var domain = _pseudonymisationHelper.GetDomain("uhmep_v1").Result;
-
-  if (domain == null)
-  {
-      throw new InvalidOperationException("domain cannot be null");
-  }
+  var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
 
   var pseudonymAtRest =
       domain
@@ -1018,22 +957,15 @@ Synchronous code
 
 As a REST API, I want to pseudonymise a citizen's SSIN before to send it to my user.
 
-Synchronous code
-
 ``` cs
-  var domain = _pseudonymisationHelper.GetDomain("uhmep_v1");
-
-  if (domain == null)
-  {
-      throw new InvalidOperationException("domain cannot be null");
-  }
+  var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
 
   var pseudonymInTransit =
-      domain.Result?
-      .PseudonymFactory
-      .FromX("...")
-      .InTransit()
-      .AsString();
+      domain
+          .PseudonymFactory
+          .FromX("...")
+          .InTransit()
+          .AsString();
 ```
 Due to potential clock desynchronization, the library permits the use of a pseudonym that has expired within the last minute (i.e., when the `exp` is reached). After this period, the pseudonym in transit will no longer be usable.
 
@@ -1041,57 +973,46 @@ Due to potential clock desynchronization, the library permits the use of a pseud
 
 As a REST API, I want to convert a pseudonym of my domain in a pseudodym in transit of another domain before to send it to a REST API that uses this other domain.
 
-In the following example, the pseudonym at rest from the domain `uhmep_v1` will be converted into a pseudonym in transit of the domain `ehealth_v1`. Be.Ict.Reuse .Synchronous code
+In the following example, the pseudonym at rest from the domain `uhmep_v1` will be converted into a pseudonym in transit of the domain `ehealth_v1`.
 
 ``` cs
-  var domain = _pseudonymisationHelper.GetDomain("uhmep_v1")
-      ?? throw new InvalidOperationException("domain cannot be null");
+  var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
 
-
-  var toDomain = _pseudonymisationHelper.GetDomain("ehealth_v1").Result
-      ?? throw new InvalidOperationException("toDomain cannot be null");
+  var toDomain = await _pseudonymisationHelper.GetDomain("ehealth_v1");
 
   var pseudonymInTransit =
-      domain
-          .Result?
+      await domain
           .PseudonymFactory.FromX("...")
-          .ConvertTo(toDomain).Result;
+          .ConvertTo(toDomain);
 ```
 
 ## Convert a pseudonym in transit to a pseudonym in transit of another domain 
 
 As a REST API, I want to convert a pseudonym in transit of the domain `ehealth_v1` to a pseudonym in transit of the domain `uhmep_v1` (my domain).
 
-Synchronous
-
 ``` cs
-  var domain = _pseudonymisationHelper.GetDomain("uhmep_v1")
-      ?? throw new InvalidOperationException("domain cannot be null");
+  var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
 
-  var toDomain = _pseudonymisationHelper.GetDomain("uhmep_v1").Result
-      ?? throw new InvalidOperationException("toDomain cannot be null");
+  var toDomain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
 
   var pseudonymInTransit =
-      domain
-      .Result?
-      .PseudonymInTransitFactory
-      .FromSec1AndTransitInfo("...")
-      .ConvertTo(toDomain);
+      await domain
+          .PseudonymInTransitFactory
+          .FromSec1AndTransitInfo("...")
+          .ConvertTo(toDomain);
 ```
 
 ## Add custom information into transitInfo payload 
 
 As a REST API, I want to add the `sub` payload property in the transitInfo, to allow the owner of the OAuth token (the subject) to identify the pseudonym in transit I will send to him.
 
-Synchronous code
-
 ``` cs
   var transitInfoCustomizer = new PayloadTransitInfoCustomizer();
 
+  var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
+
   var pseudonymInTransit =
-      _pseudonymisationHelper
-          .GetDomain("uhmep_v1")
-          .Result?
+      domain
           .PseudonymFactory
           .FromX("...")
           .InTransit(transitInfoCustomizer);
@@ -1114,15 +1035,13 @@ Note
 This is a hypothetzcuical example; there is no apparent need to sign a
 `transitInfo`.
 
-Synchronous code
-
 ``` cs
   var transitInfoCustomizer = new PayloadTransitInfoCustomizer();
 
+  var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
+
   var pseudonymInTransit =
-      _pseudonymisationHelper
-          .GetDomain("uhmep_v1")
-          .Result?
+      domain
           .PseudonymFactory
           .FromX("...")
           .InTransit(transitInfoCustomizer);
@@ -1149,17 +1068,84 @@ List of headers managed by the library :
 
 As a client of a REST API, I want to get the `exp` header property in the transitInfo to know when the pseudonym in transit will expire.
 
-Synchronous code
-
 ``` cs
-  var pseudonymInTransit =
-      _pseudonymisationHelper
-          .GetDomain("uhmep_v1").Result?
+  var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
+
+  var expiration =
+      domain
           .PseudonymInTransitFactory
           .FromSec1AndTransitInfo("...")
           .GetTransitInfo()
           .Header()["exp"];
 ```
+
+# Preloading of the known domains
+
+If you don't want the first calls to `PseudonymisationHelper` to be slow because of the fetching of the domain, you can preload the domains your application knows by calling `await GetDomain("yourdomain_v1")`.
+
+If the call throws an exception, you can decide to prevent the application from starting (because you suspect the problem is caused by a wrong configuration) or to continue with unloaded domains.
+
+If you decide to continue the deployment, you should asynchronously and periodically (once per minute, for example) try to reload the domain by calling `await RefreshDomain("yourdomain_v1")` until it does not throw any exception.
+
+Please note that a load that failed is kept in memory: `GetDomain` gives the same exception back, without calling eHealth again. Calling `GetDomain` again is therefore not a retry; only `RefreshDomain` calls eHealth again. Leave a delay between two tries, because each of them is a request to eHealth.
+
+Preloading example with retry
+
+``` cs
+  try
+  {
+      await _pseudonymisationHelper.GetDomain("yourdomain_v1");
+  }
+  catch (Exception e)
+  {
+      _logger.LogWarning(e, "Domain preloading failed, will retry periodically");
+
+      // Schedule asynchronous periodic retry using RefreshDomain() here
+  }
+```
+
+# Refreshing the domains you own every 6 hours
+
+Because of the domain secret keys rotation, eHealth requires you to refresh the domains you own every 6 hours.
+
+To achieve this, you can call `await RefreshDomain("yourdomain_v1")` for every domain you own.
+
+`RefreshableDomains` gives the set of domains you own that `PseudonymisationHelper` has previously loaded. A domain you own that has never been loaded is not in this set.
+
+Always use `await` when you call `RefreshDomain`: when the refresh fails, that is where the exception arrives. If you cannot use `await`, block on the returned task with `.GetAwaiter().GetResult()`, as explained in "If you cannot use `await`". If you start the refresh and ignore the task it returns, a failed refresh can go unnoticed: no exception reaches your code.
+
+While a refresh is running, and after a refresh that failed, `GetDomain` keeps giving the domain loaded before.
+
+If the refresh fails, you should asynchronously and periodically (once per minute, for example) retry by calling `await RefreshDomain("yourdomain_v1")` until it does not throw any exception.
+
+Refreshing example with retry
+
+``` cs
+  foreach (var domainKey in _pseudonymisationHelper.RefreshableDomains)
+  {
+      try
+      {
+          await _pseudonymisationHelper.RefreshDomain(domainKey);
+      }
+      catch (Exception e)
+      {
+          _logger.LogWarning(e, "Refresh of the domain {DomainKey} failed, will retry periodically", domainKey);
+
+          // Schedule asynchronous periodic retry using RefreshDomain() here
+      }
+  }
+```
+
+Warning
+
+If a domain is not refreshed within the expected timeframe, the secret keys may become outdated, and operations on pseudonyms in transit for this domain may fail.
+
+Important
+
+If the library throws an `UnknownKidException`, it can be caused by:
+
+- **The domain has not been refreshed in time**: ensure you refresh your domains every 6 hours.
+- **The received pseudonym in transit was created with an expired secret key**: ask the sender to refresh their domain and not to reuse expired pseudonyms in transit.
 
 # Caching 
 

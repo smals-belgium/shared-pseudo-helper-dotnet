@@ -15,11 +15,11 @@ namespace Nihdi.Common.Pseudonymisation.Tests.PortSpecific;
 public class PointEqualityTests
 {
     // A valid P-521 point, taken from the existing tests.
-    private const string X =
+    private const string _x =
         "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDEy" +
         "MzQ1Njc4OTEwDAAAAAAAAAAB";
 
-    private const string Y =
+    private const string _y =
         "ABxCeSYmGgumIwOuFyKmK1l8bilTjL+NK" +
         "Elpegi8mcsn3QB6grG5PHpgD8XCTPTGhDrT6HsGuEkEOVwZ23maSliV";
 
@@ -28,8 +28,8 @@ public class PointEqualityTests
     [TestMethod]
     public void Equals_OnTwoPointsBuiltFromTheSameCoordinates_IsTrue()
     {
-        var one = _domain.PseudonymFactory.FromXy(X, Y);
-        var other = _domain.PseudonymFactory.FromXy(X, Y);
+        var one = _domain.PseudonymFactory.FromXy(_x, _y);
+        var other = _domain.PseudonymFactory.FromXy(_x, _y);
 
         Assert.IsTrue(one.Equals(other));
         Assert.AreEqual(one.GetHashCode(), other.GetHashCode());
@@ -40,7 +40,7 @@ public class PointEqualityTests
     {
         var negated = Negate();
 
-        var one = _domain.PseudonymFactory.FromXy(X, Y);
+        var one = _domain.PseudonymFactory.FromXy(_x, _y);
         var other = _domain.PseudonymFactory.FromXy(Encode(negated.XCoord), Encode(negated.YCoord));
 
         // Only X matters, so these are the same pseudonym, and they must have the same hash code.
@@ -54,7 +54,7 @@ public class PointEqualityTests
     {
         var doubled = Double();
 
-        var one = _domain.PseudonymFactory.FromXy(X, Y);
+        var one = _domain.PseudonymFactory.FromXy(_x, _y);
         var other = _domain.PseudonymFactory.FromXy(Encode(doubled.XCoord), Encode(doubled.YCoord));
 
         Assert.AreNotEqual(one.X(), other.X(), "the fixture must produce two points with different X");
@@ -65,8 +65,8 @@ public class PointEqualityTests
     {
         var curve = EcCurveNames.GetCurveFromString("P-521");
         return curve.CreatePoint(
-            new BigInteger(1, Convert.FromBase64String(X)),
-            new BigInteger(1, Convert.FromBase64String(Y)));
+            new BigInteger(1, Convert.FromBase64String(_x)),
+            new BigInteger(1, Convert.FromBase64String(_y)));
     }
 
     private static Org.BouncyCastle.Math.EC.ECPoint Negate() => BasePoint().Negate().Normalize();

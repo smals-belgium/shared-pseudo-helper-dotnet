@@ -17,26 +17,26 @@ namespace Nihdi.Common.Pseudonymisation.Tests.PortSpecific;
 [TestClass]
 public class TransitInfoValidationTests
 {
-    private const string ExpectedAudience = "https://api-acpt.ehealth.fgov.be/pseudo/v1/domains/ehealth_v1";
-    private const string OtherAudience = "https://api-acpt.ehealth.fgov.be/pseudo/v1/domains/other_v1";
-    private const string Kid = "b54ce3e4-e7c5-455f-808e-69a03a37a85f";
+    private const string _expectedAudience = "https://api-acpt.ehealth.fgov.be/pseudo/v1/domains/ehealth_v1";
+    private const string _otherAudience = "https://api-acpt.ehealth.fgov.be/pseudo/v1/domains/other_v1";
+    private const string _kid = "b54ce3e4-e7c5-455f-808e-69a03a37a85f";
 
     // IV, ciphertext and tag of an existing test transit info. They are never decrypted here,
     // because the header is checked first, so they only need a valid format.
-    private const string Iv = "zO-S0LyrwtQLb-x9";
+    private const string _iv = "zO-S0LyrwtQLb-x9";
 
-    private const string Ciphertext =
+    private const string _ciphertext =
         "oB87loxuJfNmQbif4hHLh2Mvot17jxeqpBfsjayqyXVKMXB8-QMZYBY1OgwmWU7" +
         "ZJKvbBU62f0I6FRZIoKMQjlPMoNNJmnc2FkaIpyi6TLAciZgdolJZwZgIN5_gdK" +
         "dURIJBFOH_MEyZCCAcK6TuYRM98aGPV2SMU06RUnqrWZa1eie93w4u";
 
-    private const string Tag = "SNkaDxhvpQaQL0aBumRLmQ";
+    private const string _tag = "SNkaDxhvpQaQL0aBumRLmQ";
 
     [TestMethod]
     public void ValidateHeader_WhenAudienceDiffersFromTheDomain_Throws()
     {
-        var domain = CreateTestDomain("test", 8, ExpectedAudience);
-        var transitInfo = new TransitInfo(domain, BuildRawTransitInfo(OtherAudience));
+        var domain = CreateTestDomain("test", 8, _expectedAudience);
+        var transitInfo = new TransitInfo(domain, BuildRawTransitInfo(_otherAudience));
 
         Assert.ThrowsException<InvalidTransitInfoException>(() => transitInfo.ValidateHeader());
     }
@@ -44,8 +44,8 @@ public class TransitInfoValidationTests
     [TestMethod]
     public void ValidateHeader_WhenAudienceMatchesTheDomain_DoesNotThrow()
     {
-        var domain = CreateTestDomain("test", 8, ExpectedAudience);
-        var transitInfo = new TransitInfo(domain, BuildRawTransitInfo(ExpectedAudience));
+        var domain = CreateTestDomain("test", 8, _expectedAudience);
+        var transitInfo = new TransitInfo(domain, BuildRawTransitInfo(_expectedAudience));
 
         transitInfo.ValidateHeader();
     }
@@ -54,7 +54,7 @@ public class TransitInfoValidationTests
     public void ValidateHeader_WhenTheDomainHasNoAudience_Throws()
     {
         var domain = CreateTestDomain("test", 8, null);
-        var transitInfo = new TransitInfo(domain, BuildRawTransitInfo(ExpectedAudience));
+        var transitInfo = new TransitInfo(domain, BuildRawTransitInfo(_expectedAudience));
 
         Assert.ThrowsException<InvalidTransitInfoException>(() => transitInfo.ValidateHeader());
     }
@@ -62,16 +62,16 @@ public class TransitInfoValidationTests
     [TestMethod]
     public void Audience_OnAValidTransitInfo_ReturnsTheAudienceOfTheHeader()
     {
-        var domain = CreateTestDomain("test", 8, ExpectedAudience);
-        var transitInfo = new TransitInfo(domain, BuildRawTransitInfo(ExpectedAudience));
+        var domain = CreateTestDomain("test", 8, _expectedAudience);
+        var transitInfo = new TransitInfo(domain, BuildRawTransitInfo(_expectedAudience));
 
-        Assert.AreEqual(ExpectedAudience, transitInfo.Audience());
+        Assert.AreEqual(_expectedAudience, transitInfo.Audience());
     }
 
     [TestMethod]
     public void Audience_WhenTheHeaderHasNoAud_Throws()
     {
-        var domain = CreateTestDomain("test", 8, ExpectedAudience);
+        var domain = CreateTestDomain("test", 8, _expectedAudience);
         var transitInfo = new TransitInfo(domain, BuildRawTransitInfo(null));
 
         Assert.ThrowsException<InvalidTransitInfoException>(() => transitInfo.Audience());
@@ -80,7 +80,7 @@ public class TransitInfoValidationTests
     [TestMethod]
     public void Audience_WhenTheAudOfTheHeaderIsBlank_Throws()
     {
-        var domain = CreateTestDomain("test", 8, ExpectedAudience);
+        var domain = CreateTestDomain("test", 8, _expectedAudience);
         var transitInfo = new TransitInfo(domain, BuildRawTransitInfo("   "));
 
         Assert.ThrowsException<InvalidTransitInfoException>(() => transitInfo.Audience());
@@ -104,11 +104,11 @@ public class TransitInfoValidationTests
         header["exp"] = 1718203288L;
         header["iat"] = 1718202688L;
         header["alg"] = "dir";
-        header["kid"] = Kid;
+        header["kid"] = _kid;
 
         // The encrypted key part is empty: the `dir` algorithm has no encrypted key.
         return Base64UrlEncode(JsonSerializer.Serialize(header))
-            + ".." + Iv + "." + Ciphertext + "." + Tag;
+            + ".." + _iv + "." + _ciphertext + "." + _tag;
     }
 
     /// <summary>

@@ -24,18 +24,18 @@ public class PseudonymiseMultipleSSIN
             .Build()!;
     }
 
-    public void Synchronous()
+    public async Task Demo()
     {
-        // tag::sync[]
+        // tag::async[]
         string[] values = new[] { "00000000097", "00000000196", "00000000295" };
 
-        IValueFactory valueFactory = _pseudonymisationHelper.GetDomain("uhmep_v1")?.Result?.ValueFactory
-            ?? throw new InvalidOperationException($"{nameof(valueFactory)} cannot be null");
+        IDomain domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
+        IValueFactory valueFactory = domain.ValueFactory;
+
         IMultiplePseudonymInTransit multiplePseudonymInTransit =
-            valueFactory
-            .Multiple(values.Select(value => valueFactory.From(value)).ToList())
-            .Pseudonymize()
-            .Result;
+            await valueFactory
+                .Multiple(values.Select(value => valueFactory.From(value)).ToList())
+                .Pseudonymize();
 
         for (int i = 0; i < multiplePseudonymInTransit.Size(); i++)
         {
@@ -51,6 +51,6 @@ public class PseudonymiseMultipleSSIN
             }
         }
 
-        // end::sync[]
+        // end::async[]
     }
 }

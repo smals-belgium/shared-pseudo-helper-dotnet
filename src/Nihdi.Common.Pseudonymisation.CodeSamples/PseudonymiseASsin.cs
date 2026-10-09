@@ -22,33 +22,15 @@ public class PseudonymiseASsin
             .Build()!;
     }
 
-    public void Synchronous()
+    public async Task<IPseudonymInTransit?> Demo()
     {
-        // tag::PseudonymiseSsinSynchronous[]
-        var pseudonym =
-            _pseudonymisationHelper
-                .GetDomain("uhmep_v1").Result?
-                .ValueFactory
-                .From("00000000097")
-                .Pseudonymize().Result;
-
-        // end::PseudonymiseSsinSynchronous[]
-    }
-
-    public async Task<IPseudonymInTransit?> Asynchronous()
-    {
-        // tag::PseudonymiseSsinAsynchronous[]
+        // tag::async[]
         var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
-
-        if (domain == null)
-        {
-            return null;
-        }
 
         var pseudonym = await domain.ValueFactory
                 .From("00000000097")
                 .Pseudonymize();
-        // end::PseudonymiseSsinAsynchronous[]
+        // end::async[]
         return pseudonym;
     }
 }

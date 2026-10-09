@@ -25,15 +25,10 @@ public class ResolvePseudoAtRestFromPseudoInTransit
             .Build()!;
     }
 
-    public void Synchronous()
+    public async Task Demo()
     {
-        // tag::sync[]
-        var domain = _pseudonymisationHelper.GetDomain("uhmep_v1").Result;
-
-        if (domain == null)
-        {
-            throw new InvalidOperationException("domain cannot be null");
-        }
+        // tag::async[]
+        var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
 
         var pseudonymAtRest =
             domain
@@ -49,7 +44,7 @@ public class ResolvePseudoAtRestFromPseudoInTransit
 
         var patientInfo = _patientInfoService.GetByPseudonym(pseudonymAtRest);
 
-        // end::sync[]
+        // end::async[]
     }
 }
 

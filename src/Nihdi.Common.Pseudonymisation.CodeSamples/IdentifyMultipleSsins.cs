@@ -24,23 +24,18 @@ public class IdentifyMultipleSsins
             .Build()!;
     }
 
-    public async Task Asynchronous()
+    public async Task Demo()
     {
-        // tag::sync[]
+        // tag::async[]
         var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
 
-        if (domain == null)
-        {
-            throw new InvalidOperationException("domain cannot be null");
-        }
-
         var multiplePseudonymInTransit =
-            domain.ValueFactory
-            .Multiple(
-                new[] { "00000000097", "00000000196", "00000000295" }
-                .Select(ssin => domain.ValueFactory.From(ssin))
-            .ToArray())
-            .Pseudonymize().Result;
+            await domain.ValueFactory
+                .Multiple(
+                    new[] { "00000000097", "00000000196", "00000000295" }
+                        .Select(ssin => domain.ValueFactory.From(ssin))
+                        .ToArray())
+                .Pseudonymize();
 
         for (int i = 0; i < multiplePseudonymInTransit.Size(); i++)
         {
@@ -56,6 +51,6 @@ public class IdentifyMultipleSsins
             }
         }
 
-        // end::sync[]
+        // end::async[]
     }
 }

@@ -15,7 +15,7 @@ namespace Nihdi.Common.Pseudonymisation.Tests.PortSpecific;
 [TestClass]
 public class MultiplePseudonymInTransitSingleElementTests
 {
-    private const string PseudonymInTransitRaw =
+    private const string _pseudonymInTransitRaw =
         "BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAx" +
         "MjM0NTY3ODkxMAwAAAAAAAAAAQHjvYbZ2eX0Wdz8UejdWdSmg5HWrHNActe2loX3" +
         "Q2Y02CL_hX1ORsOFn_A6PbMLOXvFLBeE-Ue2-8aj5iSGZbWnag" +
@@ -30,7 +30,7 @@ public class MultiplePseudonymInTransitSingleElementTests
         "w-ICHAwqIzfrjOFw";
 
     // An eHealth error response: it has no `transitInfo` and no `x`/`y`, so it is rejected.
-    private const string ProblemResponse =
+    private const string _problemResponse =
         "{\"type\":\"urn:problem-type:ehealth:pseudonymisation:invalid-input\"," +
         "\"title\":\"Invalid input\",\"status\":\"400\",\"detail\":\"boom\"}";
 
@@ -59,7 +59,7 @@ public class MultiplePseudonymInTransitSingleElementTests
     [TestMethod]
     public void ConvertTo_WithASingleElement_TurnsAnEHealthProblemIntoAnElement()
     {
-        var client = new RecordingPseudonymisationClient(ProblemResponse);
+        var client = new RecordingPseudonymisationClient(_problemResponse);
         var multiple = CreateSingleElementCollection(client, out var toDomain);
 
         var task = ((IMultiplePseudonymInTransit)multiple).ConvertTo(toDomain);
@@ -73,7 +73,7 @@ public class MultiplePseudonymInTransitSingleElementTests
     [TestMethod]
     public void Identify_WithASingleElement_TurnsAnEHealthProblemIntoAnElement()
     {
-        var client = new RecordingPseudonymisationClient(ProblemResponse);
+        var client = new RecordingPseudonymisationClient(_problemResponse);
         var multiple = CreateSingleElementCollection(client, out _);
 
         var identified = multiple.Identify().Result;
@@ -119,7 +119,7 @@ public class MultiplePseudonymInTransitSingleElementTests
         var domain = CreateDomain("test", client);
         toDomain = CreateDomain("target", client);
 
-        var pseudonymInTransit = domain.PseudonymInTransitFactory.FromSec1AndTransitInfo(PseudonymInTransitRaw);
+        var pseudonymInTransit = domain.PseudonymInTransitFactory.FromSec1AndTransitInfo(_pseudonymInTransitRaw);
         return new MultiplePseudonymInTransit(domain, new List<object> { pseudonymInTransit });
     }
 

@@ -1,6 +1,8 @@
 <Project>
 	<PropertyGroup>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<!-- Without this, the naming rules of .editorconfig are only checked in the editor, never by the build. -->
+		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 	</PropertyGroup>
 	<PropertyGroup>
 		 <EnabledCodeStyleAnalysisRuleIds>

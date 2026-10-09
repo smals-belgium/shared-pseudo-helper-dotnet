@@ -22,29 +22,11 @@ public class IdentifyASsinReturnedByRestAPI
             .Build()!;
     }
 
-    public void Synchronous()
-    {
-        // tag::sync[]
-        var ssin =
-            _pseudonymisationHelper
-            .GetDomain("uhmep_v1")?.Result?
-            .PseudonymInTransitFactory
-            .FromSec1AndTransitInfo("...")
-            .Identify().Result
-            .AsString();
-        // end::sync[]
-    }
-
-    public async Task Asynchronous()
+    public async Task Demo()
     {
         // tag::async[]
         var domain =
             await _pseudonymisationHelper.GetDomain("uhmep_v1");
-
-        if (domain == null)
-        {
-            throw new InvalidOperationException("domain cannot be null");
-        }
 
         var value = await
             domain.PseudonymInTransitFactory
