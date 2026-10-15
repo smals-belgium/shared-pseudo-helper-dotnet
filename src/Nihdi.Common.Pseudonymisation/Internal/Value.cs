@@ -58,7 +58,7 @@ public class Value : Pseudonym, IValue
 
         var random = Domain.CreateRandom();
         var blindedValue = new Pseudonym(EcPoint.Multiply(random).Normalize(), Domain);
-        var payload = Domain.CreatePayload(blindedValue);
+        var payload = Domain.CreatePayloadString(blindedValue);
         var pseudonymInTransitFactory = Domain.PseudonymInTransitFactory;
         if (Domain.Key == null)
         {

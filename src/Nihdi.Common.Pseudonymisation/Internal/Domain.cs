@@ -197,7 +197,8 @@ public class Domain : IDomain
     /// <returns>A JSON string representation of the pseudonym payload.</returns>
     internal string CreatePayloadString(IPseudonym pseudonym)
     {
-        return CreatePayload(pseudonym, null);
+        // JObject indents its output by default, which would make every request larger.
+        return CreatePayload(pseudonym, null).ToString(Newtonsoft.Json.Formatting.None);
     }
 
     /// <summary>
@@ -208,15 +209,16 @@ public class Domain : IDomain
     /// <returns>A JSON string representation of the pseudonym payload.</returns>
     internal string CreatePayloadString(IPseudonym pseudonym, string? transitInfo)
     {
-        return CreatePayload(pseudonym, transitInfo);
+        // JObject indents its output by default, which would make every request larger.
+        return CreatePayload(pseudonym, transitInfo).ToString(Newtonsoft.Json.Formatting.None);
     }
 
     /// <summary>
-    /// Creates a payload string from a pseudonym, automatically extracting transit information if it's a pseudonym in transit.
+    /// Creates a payload from a pseudonym, automatically extracting transit information if it's a pseudonym in transit.
     /// </summary>
     /// <param name="pseudonym">The pseudonym to create a payload from.</param>
-    /// <returns>A JSON string representation of the pseudonym payload.</returns>
-    internal string CreatePayload(IPseudonym pseudonym)
+    /// <returns>The pseudonym payload, as a JSON object.</returns>
+    internal JObject CreatePayload(IPseudonym pseudonym)
     {
         if (pseudonym is IPseudonymInTransit pseudonymInTransit)
         {
@@ -231,8 +233,8 @@ public class Domain : IDomain
     /// </summary>
     /// <param name="pseudonym">The pseudonym to create a payload from.</param>
     /// <param name="transitInfo">The transit information to include in the payload, or null if none.</param>
-    /// <returns>A JSON string representation of the pseudonym payload.</returns>
-    internal string CreatePayload(IPseudonym pseudonym, string? transitInfo)
+    /// <returns>The pseudonym payload, as a JSON object.</returns>
+    internal JObject CreatePayload(IPseudonym pseudonym, string? transitInfo)
     {
         var payload = new JObject
         {
@@ -247,8 +249,7 @@ public class Domain : IDomain
             payload.Add("transitInfo", JToken.FromObject(transitInfo));
         }
 
-        // JObject indents its output by default, which would make every request larger.
-        return payload.ToString(Newtonsoft.Json.Formatting.None);
+        return payload;
     }
 
     /// <summary>

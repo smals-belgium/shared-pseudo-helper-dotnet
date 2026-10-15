@@ -114,12 +114,13 @@ public class MultiplePseudonymInTransit
             throw new InvalidOperationException("The target domain's key cannot be null");
         }
 
+        // JObject indents its output by default, which would make every request larger.
         return Domain
             .PseudonymisationClient
             .ConvertMultipleTo(
                 Domain.Key,
                 toDomain.Key,
-                payload.ToString())
+                payload.ToString(Newtonsoft.Json.Formatting.None))
             .ContinueWith(rawResponse =>
             {
                 var response = JObject.Parse(rawResponse.Result);
@@ -206,7 +207,7 @@ public class MultiplePseudonymInTransit
         {
             var random = Domain.CreateRandom();
             var pseudonymInTransit = (PseudonymInTransit?)Points?[i] ?? throw new InvalidCastException("Cannot cast points[i] to PseundonymInTransit.");
-            var payloadObj = JObject.Parse(Domain.CreatePayload(((Pseudonym)((PseudonymInTransit)Points![i]).Pseudonym()).Multiply(random), pseudonymInTransit.GetTransitInfo().AsString()));
+            var payloadObj = Domain.CreatePayload(((Pseudonym)((PseudonymInTransit)Points![i]).Pseudonym()).Multiply(random), pseudonymInTransit.GetTransitInfo().AsString());
 
             inputs.Add(payloadObj);
             randoms.Add(random);
@@ -223,11 +224,12 @@ public class MultiplePseudonymInTransit
             throw new InvalidOperationException("The domain's key cannot be null");
         }
 
+        // JObject indents its output by default, which would make every request larger.
         return Domain
 .PseudonymisationClient
             .IdentifyMultiple(
                 Domain.Key,
-                payload.ToString())
+                payload.ToString(Newtonsoft.Json.Formatting.None))
             .ContinueWith(rawResponse =>
             {
                 var response = JObject.Parse(rawResponse.Result);
