@@ -29,7 +29,8 @@ public class Value : Pseudonym, IValue
         var valueLengthPos = x.Length - Domain.BufferSize - 1;
         var valueLength = x[valueLengthPos];
         var startPosition = valueLengthPos - valueLength;
-        return new ArraySegment<byte>(x, startPosition, startPosition + valueLength).ToArray();
+        // ArraySegment takes a number of bytes, not an end position.
+        return new ArraySegment<byte>(x, startPosition, valueLength).ToArray();
     }
 
     /// <inheritdoc/>
