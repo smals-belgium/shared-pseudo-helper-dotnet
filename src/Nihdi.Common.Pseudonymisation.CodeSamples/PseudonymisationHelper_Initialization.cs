@@ -2,11 +2,13 @@
 // Copyright (c) Riziv-Inami. All rights reserved.
 // </copyright>
 
+using Microsoft.Extensions.Logging;
+
 namespace Nihdi.Common.Pseudonymisation.CodeSamples;
 
 public class PseudonymisationHelper_Initialisation
 {
-    public void Demo()
+    public void Demo(ILoggerFactory loggerFactory)
     {
         // tag::snippet1[]
         var helper =
@@ -15,6 +17,7 @@ public class PseudonymisationHelper_Initialisation
             .JwkSupplier(() => Task.FromResult("..."))
             .PseudonymisationClient(new PseudonymisationClient())
             .PrivateKeySupplier(domainKey => "...")
+            .LoggerFactory(loggerFactory)
             .Build();
         // end::snippet1[]
     }

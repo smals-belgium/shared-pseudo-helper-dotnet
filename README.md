@@ -109,6 +109,16 @@ domain, and check your JSON Web Key Set URL.
   - **Description**: A function supplying the private keys that are
     defined in the JWKS supplied by `jwksSupplier`.
 
+- **Name**: **loggerFactory**
+
+  - **Type**: `ILoggerFactory?`
+
+  - **Description**: The logger factory of your application. The helper
+    writes its logs through it, under the category
+    `Nihdi.Common.Pseudonymisation.PseudonymisationHelper`. Without it,
+    nothing is logged: in particular, a key server that is down when the
+    helper is built goes unnoticed.
+
 
 Only `pseudonymisationClient` is mandatory in all use cases.
 
@@ -130,6 +140,7 @@ PseudonymizationHelper initialization example
             .JwkSupplier(() => Task.FromResult("..."))
             .PseudonymisationClient(new PseudonymisationClient())
             .PrivateKeySupplier(domainKey => "...")
+            .LoggerFactory(loggerFactory)
             .Build();
 ```
 

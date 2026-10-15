@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Xml;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json.Linq;
 using Nihdi.Common.Pseudonymisation.Internal;
@@ -58,6 +59,10 @@ public sealed class PseudonymisationHelper
     /// <param name="jwksSupplier">A function that supplies the JWKS as a string.</param>
     /// <param name="pseudonymisationClient">The pseudonymisation client to use for domain operations.</param>
     /// <param name="privateKeySupplier">A function that supplies the private key in JWK format based on the key ID.</param>
+    /// <param name="loggerFactory">
+    /// The logger factory of the application, which receives the logs of the helper. Without it,
+    /// nothing is logged, including a key server that is down at startup.
+    /// </param>
     /// <remarks>
     /// Calls `jwksSupplier` and waits up to 5 seconds for the answer. If that fails, the constructor
     /// does not throw: the failure is logged and a new fetch starts at once. The next domain loaded
@@ -67,17 +72,10 @@ public sealed class PseudonymisationHelper
         Uri? jwksUrl,
         Func<Task<string>>? jwksSupplier,
         IPseudonymisationClient pseudonymisationClient,
-        Func<string, string>? privateKeySupplier)
+        Func<string, string>? privateKeySupplier,
+        ILoggerFactory? loggerFactory = null)
     {
-        var loggerFactory = LoggerFactory.Create(builder =>
-        {
-            builder.AddFilter("Microsoft", LogLevel.Warning)
-                .AddFilter("System", LogLevel.Warning)
-                .AddFilter("Pseudonymisation.Helper", LogLevel.Debug)
-                .AddConsole();
-        });
-
-        _logger = loggerFactory.CreateLogger<PseudonymisationHelper>();
+        _logger = (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<PseudonymisationHelper>();
 
         this._jwksUrl = jwksUrl;
         this._jwksSupplier = jwksSupplier;
@@ -622,6 +620,7 @@ public sealed class PseudonymisationHelper
         private Func<Task<string>>? _jwksSupplier;
         private Func<string, string>? _privateKeySupplier;
         private IPseudonymisationClient? _pseudonymisationClient;
+        private ILoggerFactory? _loggerFactory;
 
         /// <summary>
         /// Sets the JWKS URL.
@@ -672,6 +671,17 @@ public sealed class PseudonymisationHelper
         }
 
         /// <summary>
+        /// Sets the logger factory.
+        /// </summary>
+        /// <param name="loggerFactory">The logger factory.</param>
+        /// <returns>A builder for constructing instances of <see cref="PseudonymisationHelper"/>.</returns>
+        public PseudonymisationHelperBuilder LoggerFactory(ILoggerFactory? loggerFactory)
+        {
+            this._loggerFactory = loggerFactory;
+            return this;
+        }
+
+        /// <summary>
         /// Builds the <see cref="PseudonymisationHelper"/> instance.
         /// </summary>
         /// <returns>A new instance of <see cref="PseudonymisationHelper"/>.</returns>
@@ -686,7 +696,7 @@ public sealed class PseudonymisationHelper
                 throw new InvalidOperationException($"{nameof(_pseudonymisationClient)} cannot be null.");
             }
 
-            return new PseudonymisationHelper(_jwksUrl, _jwksSupplier, _pseudonymisationClient, _privateKeySupplier);
+            return new PseudonymisationHelper(_jwksUrl, _jwksSupplier, _pseudonymisationClient, _privateKeySupplier, _loggerFactory);
         }
     }
 }
