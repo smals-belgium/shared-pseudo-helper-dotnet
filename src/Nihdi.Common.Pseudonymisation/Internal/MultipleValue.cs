@@ -100,8 +100,9 @@ public class MultipleValue : MultiplePoint<IValue>, IMultipleValue
             throw new InvalidOperationException("domain.PseudonymisationClient cannot be null");
         }
 
+        // JObject indents its output by default, which would make every request larger.
         return this.Domain.PseudonymisationClient
-            .PseudonymizeMultiple(this.Domain.Key!, payload.ToString())
+            .PseudonymizeMultiple(this.Domain.Key!, payload.ToString(Newtonsoft.Json.Formatting.None))
             .ContinueWith(rawResponse =>
             {
                 var response = JObject.Parse(rawResponse.Result);

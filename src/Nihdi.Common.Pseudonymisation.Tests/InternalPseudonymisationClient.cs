@@ -87,7 +87,7 @@ internal class InternalPseudonymisationClient : IPseudonymisationClient
 
         for (int i = 0; i < inputs.Count; i++)
         {
-            var input = JObject.Parse(inputs[i].ToString());
+            var input = (JObject)inputs[i];
             var x = input["x"]?.ToString() ?? throw new InvalidOperationException("x cannot be null");
             var y = input["y"]?.ToString() ?? throw new InvalidOperationException("y cannot be null");
             var transitInfo = input["transitInfo"]?.ToString() ?? throw new InvalidOperationException("transitInfo cannot be null");
@@ -176,7 +176,7 @@ internal class InternalPseudonymisationClient : IPseudonymisationClient
                 .GetDomain("uhmep_v1")
                 .ContinueWith(uhmepV1 =>
                 {
-                    var inputObj = JObject.Parse(input.ToString());
+                    var inputObj = (JObject)input;
                     var pseudonym = uhmepV1.Result?.PseudonymFactory.FromXy(inputObj["x"]?.ToString()!, inputObj["y"]?.ToString()!);
                     var fakePseudonym = uhmepV1.Result?.PseudonymFactory.FromXy(pseudonym?.X()!, pseudonym?.Y()!);
                     var pseudonymInTransit = fakePseudonym?.InTransit();

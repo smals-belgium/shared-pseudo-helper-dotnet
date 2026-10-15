@@ -109,9 +109,10 @@ public class MultiplePseudonym : MultiplePoint<IPseudonym>, IMultiplePseudonym
             throw new ArgumentNullException(nameof(toDomain.Key));
         }
 
+        // JObject indents its output by default, which would make every request larger.
         return Domain
 .PseudonymisationClient
-            .ConvertMultipleTo(Domain.Key, toDomain.Key, payload.ToString())
+            .ConvertMultipleTo(Domain.Key, toDomain.Key, payload.ToString(Newtonsoft.Json.Formatting.None))
             .ContinueWith(t =>
             {
                 var response = JObject.Parse(t.Result);
