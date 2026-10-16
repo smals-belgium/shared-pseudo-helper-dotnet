@@ -50,7 +50,7 @@ public class Value : Pseudonym, IValue
     }
 
     /// <inheritdoc/>
-    public Task<IPseudonymInTransit> Pseudonymize()
+    public Task<IPseudonymInTransit> Pseudonymize(CancellationToken cancellationToken = default)
     {
         if (Domain.PseudonymisationClient == null)
         {
@@ -66,9 +66,8 @@ public class Value : Pseudonym, IValue
             throw new ArgumentNullException(nameof(Domain.Key));
         }
 
-        return Domain.PseudonymisationClient
-                .Pseudonymize(Domain.Key, payload)
+        return TimeLimit.WaitFor(Domain.PseudonymisationClient.Pseudonymize(Domain.Key, payload, cancellationToken), cancellationToken)
                 .ContinueWith(rawResponse =>
-                    pseudonymInTransitFactory.FromRawResponse(rawResponse.Result, random));
+                    pseudonymInTransitFactory.FromRawResponse(rawResponse.GetAwaiter().GetResult(), random));
     }
 }

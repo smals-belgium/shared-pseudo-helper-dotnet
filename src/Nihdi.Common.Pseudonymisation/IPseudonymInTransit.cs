@@ -50,8 +50,9 @@ public interface IPseudonymInTransit : IPoint
     /// <summary>
     /// Identify (de-pseudonymise) this <see cref="IPseudonymInTransit"/>.
     /// </summary>
+    /// <param name="cancellationToken">Cancels the call: the pending request is told to stop.</param>
     /// <returns>The identified <see cref="IPseudonym"/> as <see cref="Task{IValue}"/>.</returns>
-    Task<IValue> Identify();
+    Task<IValue> Identify(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Decrypt the pseudonym in transit.
@@ -76,10 +77,11 @@ public interface IPseudonymInTransit : IPoint
     /// <paramref name="toDomain" /> the target domain for the returned <see cref="IPseudonymInTransit"/>.
     /// </summary>
     /// <param name="toDomain">The target domain for the returned <see cref="IPseudonymInTransit"/>.</param>
+    /// <param name="cancellationToken">Cancels the call: the pending request is told to stop.</param>
     /// <returns>A <see cref="IPseudonymInTransit"/> for the given domain,
     /// matching this <see cref="IPseudonymInTransit"/>.
     /// </returns>
-    Task<IPseudonymInTransit> ConvertTo(IDomain toDomain);
+    Task<IPseudonymInTransit> ConvertTo(IDomain toDomain, CancellationToken cancellationToken = default);
 }
 
 // end::interface[]

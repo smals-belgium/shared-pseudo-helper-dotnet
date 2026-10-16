@@ -40,10 +40,11 @@ public interface IValue : IPoint
     /// <summary>
     /// Pseudonymize this <see cref="IValue"/>.
     /// </summary>
+    /// <param name="cancellationToken">Cancels the call: the pending request is told to stop.</param>
     /// <returns>
     /// A random <see cref="IPseudonymInTransit"/> for this <see cref="IValue"/>.
     /// </returns>.
-    Task<IPseudonymInTransit> Pseudonymize();
+    Task<IPseudonymInTransit> Pseudonymize(CancellationToken cancellationToken = default);
 }
 
 // end::interface[]

@@ -17,7 +17,7 @@ public class PseudonymisAesString
             PseudonymisationHelper
             .Builder()
             .JwksUrl(new Uri("https://api.ehealth.fgov.be/etee/v1/pubKeys/cacerts/jwks?identifier=0406798006&type=CBE&applicationIdentifier=UHMEP&use=enc"))
-            .JwkSupplier(() => Task.FromResult("..."))
+            .JwkSupplier(cancellationToken => Task.FromResult("..."))
             .PseudonymisationClient(new PseudonymisationClient())
             .PrivateKeySupplier(domainKey => "...")
             .Build()!;

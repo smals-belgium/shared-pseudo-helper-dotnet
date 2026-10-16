@@ -22,18 +22,20 @@ public interface IMultiplePseudonymInTransit : IMultiplePoint<IPseudonymInTransi
     /// The key of the target <see cref="IDomain"/> for the returned
     /// <see cref="IPseudonymInTransit"/>s.
     /// </param>
+    /// <param name="cancellationToken">Cancels the call: the pending request is told to stop.</param>
     /// <returns>
     /// A <see cref="Task{IMultiplePseudonymInTransit}"/> that contains the
     /// converted <see cref="IPseudonym"/>s for the given
     /// <see cref="IDomain"/>.
     /// </returns>
-    Task<IMultiplePseudonymInTransit>? ConvertTo(IDomain toDomain);
+    Task<IMultiplePseudonymInTransit>? ConvertTo(IDomain toDomain, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Identify all <see cref="IPseudonymInTransit"/>s in this collection.
     /// </summary>
+    /// <param name="cancellationToken">Cancels the call: the pending request is told to stop.</param>
     /// <returns>A task that represents the asynchronous operation.
     /// The task result contains the identified <see cref="IPseudonymInTransit"/>s.
     /// </returns>
-    Task<IMultipleValue> Identify();
+    Task<IMultipleValue> Identify(CancellationToken cancellationToken = default);
 }

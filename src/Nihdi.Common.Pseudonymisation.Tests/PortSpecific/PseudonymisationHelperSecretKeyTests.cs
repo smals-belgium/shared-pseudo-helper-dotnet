@@ -118,7 +118,7 @@ public class PseudonymisationHelperSecretKeyTests
     {
         var helper = PseudonymisationHelper.Builder()
             .JwksUrl(new Uri(_ourJku))
-            .JwkSupplier(() => Task.FromResult(_emptyJwks))
+            .JwkSupplier(cancellationToken => Task.FromResult(_emptyJwks))
             .PrivateKeySupplier(hash => throw new NotSupportedException(hash))
             .PseudonymisationClient(new SingleDomainPseudonymisationClient(domainJson))
             .Build()
@@ -148,18 +148,18 @@ public class PseudonymisationHelperSecretKeyTests
             _domainJson = domainJson;
         }
 
-        public Task<string> GetDomain(string domainKey) => Task.FromResult(_domainJson);
+        public Task<string> GetDomain(string domainKey, CancellationToken cancellationToken) => Task.FromResult(_domainJson);
 
-        public Task<string> Identify(string domainKey, string payload) => throw new NotSupportedException();
+        public Task<string> Identify(string domainKey, string payload, CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task<string> IdentifyMultiple(string domainKey, string payload) => throw new NotSupportedException();
+        public Task<string> IdentifyMultiple(string domainKey, string payload, CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task<string> Pseudonymize(string domainKey, string payload) => throw new NotSupportedException();
+        public Task<string> Pseudonymize(string domainKey, string payload, CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task<string> PseudonymizeMultiple(string domainKey, string payload) => throw new NotSupportedException();
+        public Task<string> PseudonymizeMultiple(string domainKey, string payload, CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task<string> ConvertTo(string fromDomainKey, string toDomainKey, string payload) => throw new NotSupportedException();
+        public Task<string> ConvertTo(string fromDomainKey, string toDomainKey, string payload, CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task<string> ConvertMultipleTo(string fromDomainKey, string toDomainKey, string payload) => throw new NotSupportedException();
+        public Task<string> ConvertMultipleTo(string fromDomainKey, string toDomainKey, string payload, CancellationToken cancellationToken) => throw new NotSupportedException();
     }
 }

@@ -97,10 +97,11 @@ domain, and check your JSON Web Key Set URL.
 
 - **Name**: **jwksSupplier**
 
-  - **Type**: `Func<Task<string>>?`
+  - **Type**: `Func<CancellationToken, Task<string>>?`
 
   - **Description**: A supplier of the JSON Web Key Set (as String)
-    pointed by `jwksUrl`.
+    pointed by `jwksUrl`. It receives a token that is cancelled when the
+    `timeout` is reached: pass it on to your HTTP request.
 
 - **Name**: **privateKeySupplier**
 
@@ -108,6 +109,27 @@ domain, and check your JSON Web Key Set URL.
 
   - **Description**: A function supplying the private keys that are
     defined in the JWKS supplied by `jwksSupplier`.
+
+- **Name**: **loggerFactory**
+
+  - **Type**: `ILoggerFactory?`
+
+  - **Description**: The logger factory of your application. The helper
+    writes its logs through it, under the category
+    `Nihdi.Common.Pseudonymisation.PseudonymisationHelper`. Without it,
+    nothing is logged: in particular, a key server that is down when the
+    helper is built goes unnoticed.
+
+- **Name**: **timeout**
+
+  - **Type**: `TimeSpan?`
+
+  - **Description**: How long the helper waits for eHealth, or for
+    `jwksSupplier`, before giving up with a `TimeoutException`. Five
+    seconds when not given; it must be greater than zero. On the builder:
+    `.Timeout(...)`. It applies to the call that loads a domain and to the
+    JWKS supplier. It does **not** limit the calls that pseudonymise,
+    identify or convert: for those, see "Cancellation and time limit".
 
 
 Only `pseudonymisationClient` is mandatory in all use cases.
@@ -127,46 +149,48 @@ PseudonymizationHelper initialization example
         var helper =
             PseudonymisationHelper.Builder()
             .JwksUrl(new Uri("https://api.ehealth.fgov.be/etee/v1/pubKeys/cacerts/jwks?identifier=0406798006&type=CBE&applicationIdentifier=UHMEP&use=enc"))
-            .JwkSupplier(() => Task.FromResult("..."))
+            .JwkSupplier(cancellationToken => Task.FromResult("..."))
             .PseudonymisationClient(new PseudonymisationClient())
             .PrivateKeySupplier(domainKey => "...")
+            .LoggerFactory(loggerFactory)
+            .Timeout(TimeSpan.FromSeconds(10))
             .Build();
 ```
 
 ``` cs
     public class PseudonymisationClient : IPseudonymisationClient
     {
-        public Task<string> ConvertTo(string fromDomainKey, string toDomainKey, string payload)
+        public Task<string> ConvertTo(string fromDomainKey, string toDomainKey, string payload, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
         }
 
-        public Task<string> ConvertMultipleTo(string fromDomainKey, string toDomainKey, string payload)
+        public Task<string> ConvertMultipleTo(string fromDomainKey, string toDomainKey, string payload, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
         }
 
-        public Task<string> GetDomain(string domainKey)
+        public Task<string> GetDomain(string domainKey, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
         }
 
-        public Task<string> Identify(string domainKey, string payload)
+        public Task<string> Identify(string domainKey, string payload, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
         }
 
-        public Task<string> IdentifyMultiple(string domainKey, string payload)
+        public Task<string> IdentifyMultiple(string domainKey, string payload, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
         }
 
-        public Task<string> Pseudonymize(string domainKey, string payload)
+        public Task<string> Pseudonymize(string domainKey, string payload, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
         }
 
-        public Task<string> PseudonymizeMultiple(string domainKey, string payload)
+        public Task<string> PseudonymizeMultiple(string domainKey, string payload, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
         }
@@ -185,8 +209,9 @@ Methods of IPseudonymizationClient
     /// pseudonymisation service: please do not return a cached response.
     /// </summary>
     /// <param name="domainKey">The domain key.</param>
+    /// <param name="cancellationToken">Cancelled when the timeout of the helper is reached or when the caller cancels: stop the request then.</param>
     /// <returns>The response as a string.</returns>
-    Task<string> GetDomain(string domainKey);
+    Task<string> GetDomain(string domainKey, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Call to /pseudo/v1/domains/{domainKey}/identify with the given
@@ -194,8 +219,9 @@ Methods of IPseudonymizationClient
     /// </summary>
     /// <param name="domainKey">The domain key.</param>
     /// <param name="payload">The request body.</param>
+    /// <param name="cancellationToken">Cancelled when the caller cancels: stop the request then. The helper sets no time limit on this call; the timeout of your HTTP client does.</param>
     /// <returns>the response as a string.</returns>
-    Task<string> Identify(string domainKey, string payload);
+    Task<string> Identify(string domainKey, string payload, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Call to /pseudo/v1/domains/{domainKey}/identify with the given
@@ -203,8 +229,9 @@ Methods of IPseudonymizationClient
     /// </summary>
     /// <param name="domainKey">The domain key.</param>
     /// <param name="payload">The request body.</param>
+    /// <param name="cancellationToken">Cancelled when the caller cancels: stop the request then. The helper sets no time limit on this call; the timeout of your HTTP client does.</param>
     /// <returns>the response as a string.</returns>
-    Task<string> IdentifyMultiple(string domainKey, string payload);
+    Task<string> IdentifyMultiple(string domainKey, string payload, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Call to /pseudo/v1/domains/{domainKey}/pseudonymize with the given
@@ -212,8 +239,9 @@ Methods of IPseudonymizationClient
     /// </summary>
     /// <param name="domainKey">The domain key.</param>
     /// <param name="payload">The request body.</param>
+    /// <param name="cancellationToken">Cancelled when the caller cancels: stop the request then. The helper sets no time limit on this call; the timeout of your HTTP client does.</param>
     /// <returns>the response as a string.</returns>
-    Task<string> Pseudonymize(string domainKey, string payload);
+    Task<string> Pseudonymize(string domainKey, string payload, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Call to /pseudo/v1/domains/{domainKey}/pseudonymizeMultiple with the
@@ -221,8 +249,9 @@ Methods of IPseudonymizationClient
     /// </summary>
     /// <param name="domainKey">The domain key.</param>
     /// <param name="payload">The request body.</param>
+    /// <param name="cancellationToken">Cancelled when the caller cancels: stop the request then. The helper sets no time limit on this call; the timeout of your HTTP client does.</param>
     /// <returns>the response as a string.</returns>
-    Task<string> PseudonymizeMultiple(string domainKey, string payload);
+    Task<string> PseudonymizeMultiple(string domainKey, string payload, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Call to /pseudo/v1/domains/{fromDomainKey}/convertTo/{toDomainKey}
@@ -231,8 +260,9 @@ Methods of IPseudonymizationClient
     /// <param name="fromDomainKey">The domain of the pseudonym to convert.</param>
     /// <param name="toDomainKey">The target domain.</param>
     /// <param name="payload">The request body.</param>
+    /// <param name="cancellationToken">Cancelled when the caller cancels: stop the request then. The helper sets no time limit on this call; the timeout of your HTTP client does.</param>
     /// <returns>The response as a string.</returns>
-    Task<string> ConvertTo(string fromDomainKey, string toDomainKey, string payload);
+    Task<string> ConvertTo(string fromDomainKey, string toDomainKey, string payload, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Call to /pseudo/v1/domains/{fromDomainKey}/convertToMultiple/{toDomainKey}
@@ -241,8 +271,9 @@ Methods of IPseudonymizationClient
     /// <param name="fromDomainKey">The domain of the pseudonym to convert.</param>
     /// <param name="toDomainKey">The target domain.</param>
     /// <param name="payload">The request body.</param>
+    /// <param name="cancellationToken">Cancelled when the caller cancels: stop the request then. The helper sets no time limit on this call; the timeout of your HTTP client does.</param>
     /// <returns>The response as a string.</returns>
-    Task<string> ConvertMultipleTo(string fromDomainKey, string toDomainKey, string payload);
+    Task<string> ConvertMultipleTo(string fromDomainKey, string toDomainKey, string payload, CancellationToken cancellationToken = default);
 ```
 
 # Explanation of PseudonymisationHelper
@@ -266,7 +297,7 @@ Example with hardcoded `ehealth_v1` domain
 ``` cs
 public class MyPseudonymisationClient : IPseudonymisationClient
 {
-    public Task<string> GetDomain(string domainKey)
+    public Task<string> GetDomain(string domainKey, CancellationToken cancellationToken)
     {
         if (domainKey == "ehealth_v1")
         {
@@ -399,10 +430,11 @@ public interface IValue : IPoint
     /// <summary>
     /// Pseudonymize this <see cref="IValue"/>.
     /// </summary>
+    /// <param name="cancellationToken">Cancels the call: the pending request is told to stop.</param>
     /// <returns>
     /// A random <see cref="IPseudonymInTransit"/> for this <see cref="IValue"/>.
     /// </returns>.
-    Task<IPseudonymInTransit> Pseudonymize();
+    Task<IPseudonymInTransit> Pseudonymize(CancellationToken cancellationToken = default);
 }
 ```
 
@@ -463,10 +495,11 @@ public interface IValue : IPoint
     /// <summary>
     /// Pseudonymize this <see cref="IValue"/>.
     /// </summary>
+    /// <param name="cancellationToken">Cancels the call: the pending request is told to stop.</param>
     /// <returns>
     /// A random <see cref="IPseudonymInTransit"/> for this <see cref="IValue"/>.
     /// </returns>.
-    Task<IPseudonymInTransit> Pseudonymize();
+    Task<IPseudonymInTransit> Pseudonymize(CancellationToken cancellationToken = default);
 }
 ```
 
@@ -571,10 +604,11 @@ public interface IValue : IPoint
     /// <summary>
     /// Pseudonymize this <see cref="IValue"/>.
     /// </summary>
+    /// <param name="cancellationToken">Cancels the call: the pending request is told to stop.</param>
     /// <returns>
     /// A random <see cref="IPseudonymInTransit"/> for this <see cref="IValue"/>.
     /// </returns>.
-    Task<IPseudonymInTransit> Pseudonymize();
+    Task<IPseudonymInTransit> Pseudonymize(CancellationToken cancellationToken = default);
 }
 ```
 
@@ -604,10 +638,11 @@ public interface IPseudonym : IPoint
     /// Convert this <see cref="IPseudonym"/> into a <see cref="IPseudonymInTransit"/>.
     /// </summary>
     /// <param name="toDomain">The target domain for the returned <see cref="IPseudonymInTransit"/>.</param>
+    /// <param name="cancellationToken">Cancels the call: the pending request is told to stop.</param>
     /// <returns>
     /// A <see cref="IPseudonymInTransit"/> for the given domain, matching this <see cref="IPseudonym"/>.
     /// </returns>
-    Task<IPseudonymInTransit> ConvertTo(IDomain toDomain);
+    Task<IPseudonymInTransit> ConvertTo(IDomain toDomain, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Create <see cref="IPseudonymInTransit"/> from this <see cref="IPseudonym"/>
@@ -656,10 +691,11 @@ public interface IPseudonym : IPoint
     /// Convert this <see cref="IPseudonym"/> into a <see cref="IPseudonymInTransit"/>.
     /// </summary>
     /// <param name="toDomain">The target domain for the returned <see cref="IPseudonymInTransit"/>.</param>
+    /// <param name="cancellationToken">Cancels the call: the pending request is told to stop.</param>
     /// <returns>
     /// A <see cref="IPseudonymInTransit"/> for the given domain, matching this <see cref="IPseudonym"/>.
     /// </returns>
-    Task<IPseudonymInTransit> ConvertTo(IDomain toDomain);
+    Task<IPseudonymInTransit> ConvertTo(IDomain toDomain, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Create <see cref="IPseudonymInTransit"/> from this <see cref="IPseudonym"/>
@@ -730,8 +766,9 @@ public interface IPseudonymInTransit : IPoint
     /// <summary>
     /// Identify (de-pseudonymise) this <see cref="IPseudonymInTransit"/>.
     /// </summary>
+    /// <param name="cancellationToken">Cancels the call: the pending request is told to stop.</param>
     /// <returns>The identified <see cref="IPseudonym"/> as <see cref="Task{IValue}"/>.</returns>
-    Task<IValue> Identify();
+    Task<IValue> Identify(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Decrypt the pseudonym in transit.
@@ -756,10 +793,11 @@ public interface IPseudonymInTransit : IPoint
     /// <paramref name="toDomain" /> the target domain for the returned <see cref="IPseudonymInTransit"/>.
     /// </summary>
     /// <param name="toDomain">The target domain for the returned <see cref="IPseudonymInTransit"/>.</param>
+    /// <param name="cancellationToken">Cancels the call: the pending request is told to stop.</param>
     /// <returns>A <see cref="IPseudonymInTransit"/> for the given domain,
     /// matching this <see cref="IPseudonymInTransit"/>.
     /// </returns>
-    Task<IPseudonymInTransit> ConvertTo(IDomain toDomain);
+    Task<IPseudonymInTransit> ConvertTo(IDomain toDomain, CancellationToken cancellationToken = default);
 }
 ```
 
@@ -790,6 +828,41 @@ task ends. Be aware that:
 ``` cs
   var domain = _pseudonymisationHelper.GetDomain("uhmep_v1").GetAwaiter().GetResult();
 ```
+
+**Cancellation and time limit**
+
+Every operation that calls eHealth takes an optional `CancellationToken`
+as its last parameter: `GetDomain`, `RefreshDomain`, `Pseudonymize`,
+`Identify` and `ConvertTo`, including the `Multiple` variants. In a web
+application, pass the token of the request:
+
+``` cs
+  var pseudonymInTransit = await value.Pseudonymize(httpContext.RequestAborted);
+```
+
+A cancelled operation ends with an `OperationCanceledException`.
+
+Your `PseudonymisationClient` receives that same token: pass it on to your
+HTTP request, so that the request really stops and eHealth is not left
+working for nobody. A client that ignores the token does not block the caller,
+which stops waiting anyway, but its request keeps running.
+
+The helper sets no time limit on `Pseudonymize`, `Identify` and
+`ConvertTo`: the timeout of your HTTP client does. If you want a limit per
+call, give a token that cancels itself:
+
+``` cs
+  using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+  var pseudonymInTransit = await value.Pseudonymize(cts.Token);
+```
+
+The loads that belong to nobody in particular are different: loading a
+domain, and the call to `jwksSupplier`. They are limited by the `timeout`
+of the helper (five seconds by default), end with a `TimeoutException`,
+and give their own token to your client and to your supplier. The token
+you pass to `GetDomain` and `RefreshDomain` only stops *your* wait: the
+domain is loaded for every caller at once, and the load goes on for the
+others.
 
 ## Pseudonymise an SSIN 
 

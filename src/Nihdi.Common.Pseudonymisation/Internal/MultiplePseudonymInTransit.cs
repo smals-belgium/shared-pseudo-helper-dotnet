@@ -36,7 +36,7 @@ public class MultiplePseudonymInTransit
     }
 
     /// <inheritdoc/>
-    Task<IMultiplePseudonymInTransit>? IMultiplePseudonymInTransit.ConvertTo(IDomain toDomain)
+    Task<IMultiplePseudonymInTransit>? IMultiplePseudonymInTransit.ConvertTo(IDomain toDomain, CancellationToken cancellationToken)
     {
         if (toDomain == null)
         {
@@ -58,7 +58,7 @@ public class MultiplePseudonymInTransit
             // A single element is sent to the single endpoint and returns here. Without this return,
             // the code below would also call the `multiple` endpoint.
             return pseudonymInTransitToConvert
-                .ConvertTo(toDomain)
+                .ConvertTo(toDomain, cancellationToken)
                 .ContinueWith(task =>
                 {
                     if (task.Status == TaskStatus.RanToCompletion)
@@ -115,15 +115,11 @@ public class MultiplePseudonymInTransit
         }
 
         // JObject indents its output by default, which would make every request larger.
-        return Domain
-            .PseudonymisationClient
-            .ConvertMultipleTo(
-                Domain.Key,
-                toDomain.Key,
-                payload.ToString(Newtonsoft.Json.Formatting.None))
+        var body = payload.ToString(Newtonsoft.Json.Formatting.None);
+        return TimeLimit.WaitFor(Domain.PseudonymisationClient.ConvertMultipleTo(Domain.Key, toDomain.Key, body, cancellationToken), cancellationToken)
             .ContinueWith(rawResponse =>
             {
-                var response = JObject.Parse(rawResponse.Result);
+                var response = JObject.Parse(rawResponse.GetAwaiter().GetResult());
                 var outputsToken = response["outputs"]
                     ?? throw new InvalidOperationException("The response does not contain an 'outputs' field.");
                 var outputs = (JArray)outputsToken;
@@ -158,7 +154,7 @@ public class MultiplePseudonymInTransit
     }
 
     /// <inheritdoc/>
-    public Task<IMultipleValue> Identify()
+    public Task<IMultipleValue> Identify(CancellationToken cancellationToken = default)
     {
         var nbPseudonymsInTransit = Points?.Count ?? 0;
 
@@ -180,7 +176,7 @@ public class MultiplePseudonymInTransit
             // A single element is sent to the single endpoint and returns here. Without this return,
             // the code below would also call the `multiple` endpoint.
             return pseudonymInTransitToIdentify
-                .Identify()
+                .Identify(cancellationToken)
                 .ContinueWith(task =>
                 {
                     if (task.Status == TaskStatus.RanToCompletion)
@@ -225,14 +221,11 @@ public class MultiplePseudonymInTransit
         }
 
         // JObject indents its output by default, which would make every request larger.
-        return Domain
-.PseudonymisationClient
-            .IdentifyMultiple(
-                Domain.Key,
-                payload.ToString(Newtonsoft.Json.Formatting.None))
+        var body = payload.ToString(Newtonsoft.Json.Formatting.None);
+        return TimeLimit.WaitFor(Domain.PseudonymisationClient.IdentifyMultiple(Domain.Key, body, cancellationToken), cancellationToken)
             .ContinueWith(rawResponse =>
             {
-                var response = JObject.Parse(rawResponse.Result);
+                var response = JObject.Parse(rawResponse.GetAwaiter().GetResult());
                 var jsonString = response?["outputs"]?.ToString();
                 if (jsonString == null)
                 {

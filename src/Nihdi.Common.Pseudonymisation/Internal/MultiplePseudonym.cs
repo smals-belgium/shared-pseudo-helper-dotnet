@@ -44,7 +44,7 @@ public class MultiplePseudonym : MultiplePoint<IPseudonym>, IMultiplePseudonym
     }
 
     /// <inheritdoc/>
-    Task<MultiplePseudonymInTransit> IMultiplePseudonym.ConvertTo(IDomain toDomain)
+    Task<MultiplePseudonymInTransit> IMultiplePseudonym.ConvertTo(IDomain toDomain, CancellationToken cancellationToken)
     {
         if (Domain.PseudonymisationClient == null)
         {
@@ -70,7 +70,7 @@ public class MultiplePseudonym : MultiplePoint<IPseudonym>, IMultiplePseudonym
             // A single element is sent to the single endpoint and returns here. Without this return,
             // the code below would also call the `multiple` endpoint. An EHealthProblemException
             // is added to the collection instead of failing the call.
-            return pseudonym.ConvertTo(toDomain)
+            return pseudonym.ConvertTo(toDomain, cancellationToken)
                 .ContinueWith(task =>
                 {
                     if (task.Status == TaskStatus.RanToCompletion)
@@ -110,12 +110,11 @@ public class MultiplePseudonym : MultiplePoint<IPseudonym>, IMultiplePseudonym
         }
 
         // JObject indents its output by default, which would make every request larger.
-        return Domain
-.PseudonymisationClient
-            .ConvertMultipleTo(Domain.Key, toDomain.Key, payload.ToString(Newtonsoft.Json.Formatting.None))
+        var body = payload.ToString(Newtonsoft.Json.Formatting.None);
+        return TimeLimit.WaitFor(Domain.PseudonymisationClient.ConvertMultipleTo(Domain.Key, toDomain.Key, body, cancellationToken), cancellationToken)
             .ContinueWith(t =>
             {
-                var response = JObject.Parse(t.Result);
+                var response = JObject.Parse(t.GetAwaiter().GetResult());
                 var outputs = response["outputs"] as JArray
                     ?? throw new InvalidOperationException("outputs fields is null");
                 var pseudonymsInTransit = new MultiplePseudonymInTransit(toDomain);

@@ -25,8 +25,9 @@ public interface IPseudonymisationClient
     /// pseudonymisation service: please do not return a cached response.
     /// </summary>
     /// <param name="domainKey">The domain key.</param>
+    /// <param name="cancellationToken">Cancelled when the timeout of the helper is reached or when the caller cancels: stop the request then.</param>
     /// <returns>The response as a string.</returns>
-    Task<string> GetDomain(string domainKey);
+    Task<string> GetDomain(string domainKey, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Call to /pseudo/v1/domains/{domainKey}/identify with the given
@@ -34,8 +35,9 @@ public interface IPseudonymisationClient
     /// </summary>
     /// <param name="domainKey">The domain key.</param>
     /// <param name="payload">The request body.</param>
+    /// <param name="cancellationToken">Cancelled when the caller cancels: stop the request then. The helper sets no time limit on this call; the timeout of your HTTP client does.</param>
     /// <returns>the response as a string.</returns>
-    Task<string> Identify(string domainKey, string payload);
+    Task<string> Identify(string domainKey, string payload, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Call to /pseudo/v1/domains/{domainKey}/identify with the given
@@ -43,8 +45,9 @@ public interface IPseudonymisationClient
     /// </summary>
     /// <param name="domainKey">The domain key.</param>
     /// <param name="payload">The request body.</param>
+    /// <param name="cancellationToken">Cancelled when the caller cancels: stop the request then. The helper sets no time limit on this call; the timeout of your HTTP client does.</param>
     /// <returns>the response as a string.</returns>
-    Task<string> IdentifyMultiple(string domainKey, string payload);
+    Task<string> IdentifyMultiple(string domainKey, string payload, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Call to /pseudo/v1/domains/{domainKey}/pseudonymize with the given
@@ -52,8 +55,9 @@ public interface IPseudonymisationClient
     /// </summary>
     /// <param name="domainKey">The domain key.</param>
     /// <param name="payload">The request body.</param>
+    /// <param name="cancellationToken">Cancelled when the caller cancels: stop the request then. The helper sets no time limit on this call; the timeout of your HTTP client does.</param>
     /// <returns>the response as a string.</returns>
-    Task<string> Pseudonymize(string domainKey, string payload);
+    Task<string> Pseudonymize(string domainKey, string payload, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Call to /pseudo/v1/domains/{domainKey}/pseudonymizeMultiple with the
@@ -61,8 +65,9 @@ public interface IPseudonymisationClient
     /// </summary>
     /// <param name="domainKey">The domain key.</param>
     /// <param name="payload">The request body.</param>
+    /// <param name="cancellationToken">Cancelled when the caller cancels: stop the request then. The helper sets no time limit on this call; the timeout of your HTTP client does.</param>
     /// <returns>the response as a string.</returns>
-    Task<string> PseudonymizeMultiple(string domainKey, string payload);
+    Task<string> PseudonymizeMultiple(string domainKey, string payload, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Call to /pseudo/v1/domains/{fromDomainKey}/convertTo/{toDomainKey}
@@ -71,8 +76,9 @@ public interface IPseudonymisationClient
     /// <param name="fromDomainKey">The domain of the pseudonym to convert.</param>
     /// <param name="toDomainKey">The target domain.</param>
     /// <param name="payload">The request body.</param>
+    /// <param name="cancellationToken">Cancelled when the caller cancels: stop the request then. The helper sets no time limit on this call; the timeout of your HTTP client does.</param>
     /// <returns>The response as a string.</returns>
-    Task<string> ConvertTo(string fromDomainKey, string toDomainKey, string payload);
+    Task<string> ConvertTo(string fromDomainKey, string toDomainKey, string payload, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Call to /pseudo/v1/domains/{fromDomainKey}/convertToMultiple/{toDomainKey}
@@ -81,8 +87,9 @@ public interface IPseudonymisationClient
     /// <param name="fromDomainKey">The domain of the pseudonym to convert.</param>
     /// <param name="toDomainKey">The target domain.</param>
     /// <param name="payload">The request body.</param>
+    /// <param name="cancellationToken">Cancelled when the caller cancels: stop the request then. The helper sets no time limit on this call; the timeout of your HTTP client does.</param>
     /// <returns>The response as a string.</returns>
-    Task<string> ConvertMultipleTo(string fromDomainKey, string toDomainKey, string payload);
+    Task<string> ConvertMultipleTo(string fromDomainKey, string toDomainKey, string payload, CancellationToken cancellationToken = default);
 
     // end::methods[]
 }

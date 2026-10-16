@@ -32,9 +32,9 @@ public class MultipleValue : MultiplePoint<IValue>, IMultipleValue
     }
 
     /// <inheritdoc/>
-    public Task<IMultiplePseudonymInTransit> Pseudonymize()
+    public Task<IMultiplePseudonymInTransit> Pseudonymize(CancellationToken cancellationToken = default)
     {
-        return this.PseudonymizeImpl();
+        return this.PseudonymizeImpl(cancellationToken);
     }
 
     /// <inheritdoc/>
@@ -60,7 +60,7 @@ public class MultipleValue : MultiplePoint<IValue>, IMultipleValue
         return value;
     }
 
-    private Task<IMultiplePseudonymInTransit> PseudonymizeImpl()
+    private Task<IMultiplePseudonymInTransit> PseudonymizeImpl(CancellationToken cancellationToken)
     {
         if (this.Points.IsNullOrEmpty())
         {
@@ -77,11 +77,12 @@ public class MultipleValue : MultiplePoint<IValue>, IMultipleValue
                 throw new InvalidOperationException("points[0] cannot be null");
             }
 
-            // ContinueWith passes the task, not its result. Without `task.Result`, the collection
-            // would contain the task itself. If the call failed, `task.Result` rethrows the error.
-            return value.Pseudonymize()
+            // ContinueWith passes the task, not its result. Without reading it, the collection would
+            // contain the task itself. Reading it this way rethrows the original error, including a
+            // cancellation, instead of wrapping it in an AggregateException.
+            return value.Pseudonymize(cancellationToken)
                     .ContinueWith(task =>
-                    (IMultiplePseudonymInTransit)new MultiplePseudonymInTransit(this.Domain, new List<object> { task.Result }));
+                    (IMultiplePseudonymInTransit)new MultiplePseudonymInTransit(this.Domain, new List<object> { task.GetAwaiter().GetResult() }));
         }
 
         var randoms = new List<BigInteger>(nbValues);
@@ -101,11 +102,12 @@ public class MultipleValue : MultiplePoint<IValue>, IMultipleValue
         }
 
         // JObject indents its output by default, which would make every request larger.
-        return this.Domain.PseudonymisationClient
-            .PseudonymizeMultiple(this.Domain.Key!, payload.ToString(Newtonsoft.Json.Formatting.None))
+        var body = payload.ToString(Newtonsoft.Json.Formatting.None);
+
+        return TimeLimit.WaitFor(this.Domain.PseudonymisationClient.PseudonymizeMultiple(this.Domain.Key!, body, cancellationToken), cancellationToken)
             .ContinueWith(rawResponse =>
             {
-                var response = JObject.Parse(rawResponse.Result);
+                var response = JObject.Parse(rawResponse.GetAwaiter().GetResult());
                 var outputs = response["outputs"] as JArray
                     ?? throw new InvalidOperationException("outputs fields is null");
                 var pseudonymsInTransit = new MultiplePseudonymInTransit(this.Domain);
