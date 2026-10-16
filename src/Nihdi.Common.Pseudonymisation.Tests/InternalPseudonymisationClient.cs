@@ -20,12 +20,12 @@ internal class InternalPseudonymisationClient : IPseudonymisationClient
         this._domainJson = domainJson ?? string.Empty;
     }
 
-    public Task<string> ConvertTo(string fromDomainKey, string toDomainKey, string payload)
+    public Task<string> ConvertTo(string fromDomainKey, string toDomainKey, string payload, CancellationToken cancellationToken)
     {
         return null!;
     }
 
-    public Task<string> GetDomain(string domainKey)
+    public Task<string> GetDomain(string domainKey, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(_domainJson))
         {
@@ -35,7 +35,7 @@ internal class InternalPseudonymisationClient : IPseudonymisationClient
         return Task.FromResult(_domainJson);
     }
 
-    public async Task<string> Identify(string domainKey, string payload)
+    public async Task<string> Identify(string domainKey, string payload, CancellationToken cancellationToken)
     {
         var now = _dateTimeService.Now;
         var jsonObject = JObject.Parse(payload);
@@ -63,7 +63,7 @@ internal class InternalPseudonymisationClient : IPseudonymisationClient
          });
     }
 
-    public Task<string> IdentifyMultiple(string domainKey, string payload)
+    public Task<string> IdentifyMultiple(string domainKey, string payload, CancellationToken cancellationToken)
     {
         var now = _dateTimeService.Now;
         var jsonObject = JObject.Parse(payload);
@@ -115,7 +115,7 @@ internal class InternalPseudonymisationClient : IPseudonymisationClient
         return Task.FromResult(response.ToString());
     }
 
-    public async Task<string> Pseudonymize(string domainKey, string payload)
+    public async Task<string> Pseudonymize(string domainKey, string payload, CancellationToken cancellationToken)
     {
         var now = _dateTimeService.Now;
         var jsonObject = JObject.Parse(payload);
@@ -147,7 +147,7 @@ internal class InternalPseudonymisationClient : IPseudonymisationClient
             });
     }
 
-    public Task<string> PseudonymizeMultiple(string domainKey, string payload)
+    public Task<string> PseudonymizeMultiple(string domainKey, string payload, CancellationToken cancellationToken)
     {
         var now = _dateTimeService.Now;
         var jsonObject = JObject.Parse(payload);
@@ -198,7 +198,7 @@ internal class InternalPseudonymisationClient : IPseudonymisationClient
         return Task.FromResult(response.ToString());
     }
 
-    public Task<string> ConvertMultipleTo(string fromDomainKey, string toDomainKey, string payload)
+    public Task<string> ConvertMultipleTo(string fromDomainKey, string toDomainKey, string payload, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }

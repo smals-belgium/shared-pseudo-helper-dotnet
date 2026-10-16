@@ -19,6 +19,7 @@ public interface IMultiplePseudonym : IMultiplePoint<IPseudonym>
     /// <see cref="MultiplePseudonymInTransit"/> in the target domain.
     /// </summary>
     /// <param name="targetDomain">The target <see cref="IDomain"/> for the conversion.</param>
+    /// <param name="cancellationToken">Cancels the call: the pending request is told to stop.</param>
     /// <returns>A <see cref="Task{TResult}"/> representing the result of the asynchronous operation.</returns>
-    Task<MultiplePseudonymInTransit> ConvertTo(IDomain targetDomain);
+    Task<MultiplePseudonymInTransit> ConvertTo(IDomain targetDomain, CancellationToken cancellationToken = default);
 }

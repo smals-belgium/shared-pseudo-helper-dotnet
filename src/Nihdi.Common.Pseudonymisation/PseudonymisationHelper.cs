@@ -29,14 +29,11 @@ public sealed class PseudonymisationHelper
         "Failed to decrypt the secret key with kid `{Kid}` of the domain `{DomainKey}`. " +
         "The response from eHealth was\n{RawDomain}";
 
-    /// <summary>
-    /// How long the helper waits for eHealth, or for the JWKS supplier, before giving up.
-    /// </summary>
-    private static readonly TimeSpan _eHealthTimeout = TimeSpan.FromSeconds(5);
-
     private readonly ILogger<PseudonymisationHelper> _logger;
     private readonly Uri? _jwksUrl;
-    private readonly Func<Task<string>>? _jwksSupplier;
+    private readonly Func<CancellationToken, Task<string>>? _jwksSupplier;
+    private readonly TimeSpan _timeout;
+    private readonly TimeProvider _timeProvider = TimeProvider.System;
     private readonly IPseudonymisationClient _pseudonymisationClient;
     private readonly Func<string, string>? _privateKeySupplier;
     private readonly SecureRandom _secureRandom;
@@ -56,26 +53,37 @@ public sealed class PseudonymisationHelper
     /// Initializes a new instance of the <see cref="PseudonymisationHelper"/> class.
     /// </summary>
     /// <param name="jwksUrl">The URL to fetch the JSON Web Key Set (JWKS) from.</param>
-    /// <param name="jwksSupplier">A function that supplies the JWKS as a string.</param>
+    /// <param name="jwksSupplier">
+    /// A function that supplies the JWKS as a string. It receives a token that is cancelled when the
+    /// timeout is reached: stop the request then.
+    /// </param>
     /// <param name="pseudonymisationClient">The pseudonymisation client to use for domain operations.</param>
     /// <param name="privateKeySupplier">A function that supplies the private key in JWK format based on the key ID.</param>
     /// <param name="loggerFactory">
     /// The logger factory of the application, which receives the logs of the helper. Without it,
     /// nothing is logged, including a key server that is down at startup.
     /// </param>
+    /// <param name="timeout">
+    /// How long the helper waits for eHealth to give a domain, or for the JWKS supplier, before giving
+    /// up. Five seconds when not given. It must be greater than zero. It does not limit the calls that
+    /// pseudonymise, identify or convert: for those, use the cancellation token or the timeout of your
+    /// HTTP client.
+    /// </param>
     /// <remarks>
-    /// Calls `jwksSupplier` and waits up to 5 seconds for the answer. If that fails, the constructor
-    /// does not throw: the failure is logged and a new fetch starts at once. The next domain loaded
+    /// Calls `jwksSupplier` and waits up to the timeout (5 seconds by default) for the answer. If that fails,
+    /// the constructor does not throw: the failure is logged and a new fetch starts at once. The next domain loaded
     /// with <see cref="GetDomain"/> waits for that fetch, and fails if the key server is still down.
     /// </remarks>
-    public PseudonymisationHelper(
+    private PseudonymisationHelper(
         Uri? jwksUrl,
-        Func<Task<string>>? jwksSupplier,
+        Func<CancellationToken, Task<string>>? jwksSupplier,
         IPseudonymisationClient pseudonymisationClient,
         Func<string, string>? privateKeySupplier,
-        ILoggerFactory? loggerFactory = null)
+        ILoggerFactory? loggerFactory = null,
+        TimeSpan? timeout = null)
     {
         _logger = (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<PseudonymisationHelper>();
+        _timeout = TimeLimit.Validate(timeout ?? TimeLimit.DefaultTimeout);
 
         this._jwksUrl = jwksUrl;
         this._jwksSupplier = jwksSupplier;
@@ -157,7 +165,7 @@ public sealed class PseudonymisationHelper
         {
             // The supplier is called here, not inside ParseJwks, so that a supplier which
             // throws on the spot fails the caller instead of the task nobody is watching yet.
-            var pending = ParseJwks(WithTimeout(_jwksSupplier(), _eHealthTimeout));
+            var pending = ParseJwks(TimeLimit.Run(_jwksSupplier, _timeout, _timeProvider));
 
             // Nobody is obliged to read this fetch: another call may replace it first, and the
             // caller of this method never waits for it. A failure nobody reads is dropped on purpose,
@@ -180,16 +188,92 @@ public sealed class PseudonymisationHelper
     /// If the domain is already present, it will be updated with the latest information.
     /// </summary>
     /// <param name="domainKey">The domain key.</param>
+    /// <param name="cancellationToken">
+    /// Stops this caller from waiting. It never cancels the load itself, which other callers may be
+    /// waiting for too: only the timeout does.
+    /// </param>
     /// <returns>The refreshed domain. The task fails when the domain could not be refreshed.</returns>
     /// <remarks>
-    /// Calls eHealth, through <see cref="IPseudonymisationClient.GetDomain(string)"/>, and waits
-    /// up to 5 seconds for the answer. The one exception: while a load of the same domain is
+    /// Calls eHealth, through <see cref="IPseudonymisationClient.GetDomain(string, CancellationToken)"/>, and waits
+    /// up to the timeout (5 seconds by default) for the answer. The one exception: while a load of the same domain is
     /// still running, that load is returned and eHealth is not called again.
     /// Domains are refreshed independently: a slow answer for one does not delay the others.
     /// Use <c>await</c> on the returned task to know whether the refresh worked. If it failed,
     /// <see cref="GetDomain"/> keeps giving the domain loaded before, when there is one.
     /// </remarks>
-    public Task<IDomain> RefreshDomain(string domainKey)
+    public Task<IDomain> RefreshDomain(string domainKey, CancellationToken cancellationToken = default)
+    {
+        return TimeLimit.WaitFor(RefreshDomainTask(domainKey), cancellationToken);
+    }
+
+    /// <summary>
+    /// Get the domain for the given domain key.
+    /// If the domain is not present, it will be retrieved from the pseudonymisation service.
+    /// </summary>
+    /// <param name="domainKey">The key of the domain to retrieve.</param>
+    /// <param name="cancellationToken">
+    /// Stops this caller from waiting. It never cancels the load itself, which other callers may be
+    /// waiting for too: only the timeout does.
+    /// </param>
+    /// <returns>The domain, never null. The task fails when the domain could not be loaded.</returns>
+    /// <remarks>
+    /// Calls eHealth only the first time a domain is asked for; after that the domain is given
+    /// from memory. The same call is therefore instant or a network round trip, depending on what
+    /// the rest of the application did before.
+    /// While a refresh is running, or after a refresh that failed, the domain loaded before is
+    /// given instead, when there is one.
+    /// A load that failed is not tried again by this method: the failure is given back until
+    /// <see cref="RefreshDomain"/> is called.
+    /// </remarks>
+    public Task<IDomain> GetDomain(string domainKey, CancellationToken cancellationToken = default)
+    {
+        return TimeLimit.WaitFor(GetDomainTask(domainKey), cancellationToken);
+    }
+
+    /// <summary>
+    /// Decodes a Base64Url-encoded string to a byte array.
+    /// </summary>
+    /// <param name="input">The Base64Url-encoded string.</param>
+    /// <returns>The decoded byte array.</returns>
+    private static byte[] Base64UrlDecode(string? input)
+    {
+        if (string.IsNullOrEmpty(input))
+        {
+            throw new ArgumentException($"Field `{input}` cannot be null or empty.", nameof(input));
+        }
+
+        return Base64UrlEncoder.DecodeBytes(input);
+    }
+
+    /// <summary>
+    /// Returns the first of the given key IDs that our JWK set knows about.
+    /// </summary>
+    /// <param name="jwks">Our own JWK set.</param>
+    /// <param name="kids">The key IDs the recipients were encrypted for.</param>
+    /// <returns>The matching key, or null when the JWK set knows none of them.</returns>
+    private static JsonWebKey? FindMatchingJwk(JsonWebKeySet jwks, List<string> kids)
+    {
+        return kids
+            .Select(kid => jwks.Keys.FirstOrDefault(key => key.KeyId == kid))
+            .FirstOrDefault(key => key != null);
+    }
+
+    /// <summary>
+    /// Parses the JWK set once the supplier has answered.
+    /// </summary>
+    /// <param name="fetch">The pending call to the JWKS supplier.</param>
+    /// <returns>The parsed JWK set.</returns>
+    private static async Task<JsonWebKeySet> ParseJwks(Task<string> fetch)
+    {
+        return JsonWebKeySet.Create(await fetch.ConfigureAwait(false));
+    }
+
+    /// <summary>
+    /// Gives the shared task that refreshes the domain, starting it when no load is running.
+    /// </summary>
+    /// <param name="domainKey">The domain key.</param>
+    /// <returns>The task shared by every caller of the domain.</returns>
+    private Task<IDomain> RefreshDomainTask(string domainKey)
     {
         // The first time the domain is asked, we create a new task
         if (!_domains.TryGetValue(domainKey, out var domain))
@@ -224,25 +308,15 @@ public sealed class PseudonymisationHelper
     }
 
     /// <summary>
-    /// Get the domain for the given domain key.
-    /// If the domain is not present, it will be retrieved from the pseudonymisation service.
+    /// Gives the shared task of the domain, or the one loaded before while a refresh is running.
     /// </summary>
     /// <param name="domainKey">The key of the domain to retrieve.</param>
-    /// <returns>The domain, never null. The task fails when the domain could not be loaded.</returns>
-    /// <remarks>
-    /// Calls eHealth only the first time a domain is asked for; after that the domain is given
-    /// from memory. The same call is therefore instant or a network round trip, depending on what
-    /// the rest of the application did before.
-    /// While a refresh is running, or after a refresh that failed, the domain loaded before is
-    /// given instead, when there is one.
-    /// A load that failed is not tried again by this method: the failure is given back until
-    /// <see cref="RefreshDomain"/> is called.
-    /// </remarks>
-    public Task<IDomain> GetDomain(string domainKey)
+    /// <returns>The task shared by every caller of the domain.</returns>
+    private Task<IDomain> GetDomainTask(string domainKey)
     {
         if (!_domains.TryGetValue(domainKey, out var domain))
         {
-            return RefreshDomain(domainKey);
+            return RefreshDomainTask(domainKey);
         }
 
         if (domain.IsCompleted && !domain.IsFaulted && !domain.IsCanceled)
@@ -254,76 +328,11 @@ public sealed class PseudonymisationHelper
     }
 
     /// <summary>
-    /// Decodes a Base64Url-encoded string to a byte array.
-    /// </summary>
-    /// <param name="input">The Base64Url-encoded string.</param>
-    /// <returns>The decoded byte array.</returns>
-    private static byte[] Base64UrlDecode(string? input)
-    {
-        if (string.IsNullOrEmpty(input))
-        {
-            throw new ArgumentException($"Field `{input}` cannot be null or empty.", nameof(input));
-        }
-
-        return Base64UrlEncoder.DecodeBytes(input);
-    }
-
-    /// <summary>
-    /// Returns a task that gives up after the given delay.
-    /// The work already started is not cancelled, only abandoned: whoever started it cannot be
-    /// told to stop, so the call may well still be running when this task has already failed.
-    /// </summary>
-    /// <typeparam name="T">The type of the awaited result.</typeparam>
-    /// <param name="task">The task to put a time limit on.</param>
-    /// <param name="timeout">How long to wait before giving up.</param>
-    /// <returns>A task that fails with a <see cref="TimeoutException"/> once the delay is over.</returns>
-    private static async Task<T> WithTimeout<T>(Task<T> task, TimeSpan timeout)
-    {
-        using (var giveUp = new CancellationTokenSource())
-        {
-            var finished = await Task.WhenAny(task, Task.Delay(timeout, giveUp.Token)).ConfigureAwait(false);
-
-            if (finished != task)
-            {
-                throw new TimeoutException($"No answer after {timeout.TotalSeconds:0.#} seconds.");
-            }
-
-            // Stop the timer, otherwise it holds a pending task until the delay is over.
-            giveUp.Cancel();
-
-            return await task.ConfigureAwait(false);
-        }
-    }
-
-    /// <summary>
-    /// Returns the first of the given key IDs that our JWK set knows about.
-    /// </summary>
-    /// <param name="jwks">Our own JWK set.</param>
-    /// <param name="kids">The key IDs the recipients were encrypted for.</param>
-    /// <returns>The matching key, or null when the JWK set knows none of them.</returns>
-    private static JsonWebKey? FindMatchingJwk(JsonWebKeySet jwks, List<string> kids)
-    {
-        return kids
-            .Select(kid => jwks.Keys.FirstOrDefault(key => key.KeyId == kid))
-            .FirstOrDefault(key => key != null);
-    }
-
-    /// <summary>
-    /// Parses the JWK set once the supplier has answered.
-    /// </summary>
-    /// <param name="fetch">The pending call to the JWKS supplier.</param>
-    /// <returns>The parsed JWK set.</returns>
-    private static async Task<JsonWebKeySet> ParseJwks(Task<string> fetch)
-    {
-        return JsonWebKeySet.Create(await fetch.ConfigureAwait(false));
-    }
-
-    /// <summary>
     /// Starts loading the given domain: asks eHealth for it and builds it from the answer.
     /// </summary>
     /// <param name="domainKey">The key of the domain to load.</param>
     /// <returns>
-    /// A task that gives the domain. It fails when eHealth fails or takes more than 5 seconds,
+    /// A task that gives the domain. It fails when eHealth fails or takes more than the timeout (5 seconds by default),
     /// or when the answer cannot be turned into a domain.
     /// </returns>
     private Task<IDomain> DomainTask(string domainKey)
@@ -350,7 +359,9 @@ public sealed class PseudonymisationHelper
             throw new ArgumentNullException(nameof(_pseudonymisationClient));
         }
 
-        var rawDomain = await WithTimeout(_pseudonymisationClient.GetDomain(domainKey), _eHealthTimeout)
+        var client = _pseudonymisationClient;
+
+        var rawDomain = await TimeLimit.Run(token => client.GetDomain(domainKey, token), _timeout, _timeProvider)
             .ConfigureAwait(false);
 
         return CreateDomain(rawDomain);
@@ -617,10 +628,11 @@ public sealed class PseudonymisationHelper
     public class PseudonymisationHelperBuilder
     {
         private Uri? _jwksUrl;
-        private Func<Task<string>>? _jwksSupplier;
+        private Func<CancellationToken, Task<string>>? _jwksSupplier;
         private Func<string, string>? _privateKeySupplier;
         private IPseudonymisationClient? _pseudonymisationClient;
         private ILoggerFactory? _loggerFactory;
+        private TimeSpan? _timeout;
 
         /// <summary>
         /// Sets the JWKS URL.
@@ -639,9 +651,9 @@ public sealed class PseudonymisationHelper
         /// Sets the JWKS supplier function.
         /// This function will be called each time there is an unknown key ID.
         /// </summary>
-        /// <param name="jwksSupplier">The JWKS supplier function.</param>
+        /// <param name="jwksSupplier">The JWKS supplier function. It receives a token that is cancelled when the timeout is reached.</param>
         /// <returns>A builder for constructing instances of <see cref="PseudonymisationHelper"/>.</returns>
-        public PseudonymisationHelperBuilder JwkSupplier(Func<Task<string>>? jwksSupplier)
+        public PseudonymisationHelperBuilder JwkSupplier(Func<CancellationToken, Task<string>>? jwksSupplier)
         {
             this._jwksSupplier = jwksSupplier;
             return this;
@@ -682,11 +694,24 @@ public sealed class PseudonymisationHelper
         }
 
         /// <summary>
+        /// Sets how long the helper waits for eHealth to give a domain, or for the JWKS supplier, before
+        /// giving up. Five seconds when not set. It does not limit the calls that pseudonymise, identify
+        /// or convert.
+        /// </summary>
+        /// <param name="timeout">The timeout. It must be greater than zero.</param>
+        /// <returns>A builder for constructing instances of <see cref="PseudonymisationHelper"/>.</returns>
+        public PseudonymisationHelperBuilder Timeout(TimeSpan timeout)
+        {
+            this._timeout = TimeLimit.Validate(timeout);
+            return this;
+        }
+
+        /// <summary>
         /// Builds the <see cref="PseudonymisationHelper"/> instance.
         /// </summary>
         /// <returns>A new instance of <see cref="PseudonymisationHelper"/>.</returns>
         /// <remarks>
-        /// Calls the JWKS supplier and waits up to 5 seconds for the answer before returning.
+        /// Calls the JWKS supplier and waits up to the timeout (5 seconds by default) for the answer before returning.
         /// A failure is logged, not thrown: a key server that is down does not stop the build.
         /// </remarks>
         public PseudonymisationHelper? Build()
@@ -696,7 +721,7 @@ public sealed class PseudonymisationHelper
                 throw new InvalidOperationException($"{nameof(_pseudonymisationClient)} cannot be null.");
             }
 
-            return new PseudonymisationHelper(_jwksUrl, _jwksSupplier, _pseudonymisationClient, _privateKeySupplier, _loggerFactory);
+            return new PseudonymisationHelper(_jwksUrl, _jwksSupplier, _pseudonymisationClient, _privateKeySupplier, _loggerFactory, _timeout);
         }
     }
 }

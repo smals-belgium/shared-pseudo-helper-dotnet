@@ -69,7 +69,7 @@ public class PseudonymInTransit : IPseudonymInTransit
     }
 
     /// <inheritdoc/>
-    public Task<IValue> Identify()
+    public Task<IValue> Identify(CancellationToken cancellationToken = default)
     {
         var random = Domain.CreateRandom();
 
@@ -91,11 +91,10 @@ public class PseudonymInTransit : IPseudonymInTransit
             throw new InvalidOperationException("The domains's key property cannot be null.");
         }
 
-        return Domain.PseudonymisationClient
-            .Identify(Domain.Key, payload)
+        return TimeLimit.WaitFor(Domain.PseudonymisationClient.Identify(Domain.Key, payload, cancellationToken), cancellationToken)
             .ContinueWith(rawResponse =>
             {
-                var valueAsPseudonym = Domain.PseudonymFactory.FromRawResponse(rawResponse.Result, random);
+                var valueAsPseudonym = Domain.PseudonymFactory.FromRawResponse(rawResponse.GetAwaiter().GetResult(), random);
                 return new Value(valueAsPseudonym.EcPoint, Domain) as IValue;
             });
     }
@@ -127,7 +126,7 @@ public class PseudonymInTransit : IPseudonymInTransit
     }
 
     /// <inheritdoc/>
-    public Task<IPseudonymInTransit> ConvertTo(IDomain toDomain)
+    public Task<IPseudonymInTransit> ConvertTo(IDomain toDomain, CancellationToken cancellationToken = default)
     {
         if (toDomain == null || toDomain.Key == null)
         {
@@ -148,9 +147,9 @@ public class PseudonymInTransit : IPseudonymInTransit
         var random = domain.CreateRandom();
         var blindedPseudonym = _pseudonym.Multiply(random);
         var payload = domain.CreatePayloadString(blindedPseudonym, _transitInfo.AsString());
-        return domain.PseudonymisationClient.ConvertTo(domain.Key, toDomain.Key, payload)
+        return TimeLimit.WaitFor(domain.PseudonymisationClient.ConvertTo(domain.Key, toDomain.Key, payload, cancellationToken), cancellationToken)
             .ContinueWith(s => ((PseudonymInTransitFactory)toDomain.PseudonymInTransitFactory)
-                .FromRawResponse(s.Result, random));
+                .FromRawResponse(s.GetAwaiter().GetResult(), random));
     }
 
     /// <inheritdoc/>

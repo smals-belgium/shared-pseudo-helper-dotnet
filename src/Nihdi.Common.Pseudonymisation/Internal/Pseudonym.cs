@@ -37,7 +37,7 @@ public class Pseudonym : Point, IPseudonym
     }
 
     /// <inheritdoc/>
-    public Task<IPseudonymInTransit> ConvertTo(IDomain toDomain)
+    public Task<IPseudonymInTransit> ConvertTo(IDomain toDomain, CancellationToken cancellationToken = default)
     {
         var domain = Domain;
         var random = domain.CreateRandom();
@@ -63,11 +63,11 @@ public class Pseudonym : Point, IPseudonym
             throw new ArgumentNullException(nameof(domain.PseudonymisationClient));
         }
 
-        return domain.PseudonymisationClient.ConvertTo(domain.Key, toDomain.Key, payload)
+        return TimeLimit.WaitFor(domain.PseudonymisationClient.ConvertTo(domain.Key, toDomain.Key, payload, cancellationToken), cancellationToken)
             .ContinueWith(t =>
                 ((PseudonymInTransitFactory)toDomain
                     .PseudonymInTransitFactory)
-                    .FromRawResponse(t.Result, random));
+                    .FromRawResponse(t.GetAwaiter().GetResult(), random));
     }
 
     /// <inheritdoc/>

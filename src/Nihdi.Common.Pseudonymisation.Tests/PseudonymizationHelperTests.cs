@@ -78,7 +78,7 @@ public class PseudonymisationHelperTest
         };
 
         // Create JWKS supplier - should return the public keys in JWKS format
-        Func<Task<string>> jwksSupplier = () => Task.FromResult(CreateJwks(_uhmepKey, _pseudoKey));
+        Func<CancellationToken, Task<string>> jwksSupplier = cancellationToken => Task.FromResult(CreateJwks(_uhmepKey, _pseudoKey));
 
         var internalPseudonymisationHelper =
             PseudonymisationHelper.Builder()

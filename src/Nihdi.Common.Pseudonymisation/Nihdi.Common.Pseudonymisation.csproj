@@ -54,6 +54,7 @@
 	<!-- Polyfills for .NET Framework: these APIs ship in-box on net8.0 and net10.0. -->
 	<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
 		<PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
+		<PackageReference Include="Microsoft.Bcl.TimeProvider" Version="8.0.1" />
 		<PackageReference Include="System.Collections.Immutable" Version="9.0.2" />
 		<PackageReference Include="System.Text.Json" Version="8.0.5" />
 	</ItemGroup>

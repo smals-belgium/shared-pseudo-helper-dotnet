@@ -27,10 +27,11 @@ public interface IPseudonym : IPoint
     /// Convert this <see cref="IPseudonym"/> into a <see cref="IPseudonymInTransit"/>.
     /// </summary>
     /// <param name="toDomain">The target domain for the returned <see cref="IPseudonymInTransit"/>.</param>
+    /// <param name="cancellationToken">Cancels the call: the pending request is told to stop.</param>
     /// <returns>
     /// A <see cref="IPseudonymInTransit"/> for the given domain, matching this <see cref="IPseudonym"/>.
     /// </returns>
-    Task<IPseudonymInTransit> ConvertTo(IDomain toDomain);
+    Task<IPseudonymInTransit> ConvertTo(IDomain toDomain, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Create <see cref="IPseudonymInTransit"/> from this <see cref="IPseudonym"/>

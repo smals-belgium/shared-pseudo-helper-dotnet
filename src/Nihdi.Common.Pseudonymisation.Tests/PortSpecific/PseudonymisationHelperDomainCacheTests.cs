@@ -23,11 +23,21 @@ public class PseudonymisationHelperDomainCacheTests
         "\"jku\":[],\"secretKeys\":[]}";
 
     /// <summary>
-    /// How long a test waits before it decides that loading a domain is stuck.
-    /// The helper gives up on eHealth after five seconds, so ten is a safe margin while still
-    /// failing if the wait has no bound at all.
+    /// How long a test waits before it decides that loading a domain is stuck. The helper gives up
+    /// on its own, so this only stops a broken helper from hanging the test run.
     /// </summary>
     private static readonly TimeSpan _loadTimeout = TimeSpan.FromSeconds(10);
+
+    /// <summary>
+    /// The timeout given to the helper in the test that waits for it. It is real time, so it is kept short.
+    /// </summary>
+    private static readonly TimeSpan _shortTimeout = TimeSpan.FromMilliseconds(200);
+
+    /// <summary>
+    /// The longest that test waits for the short timeout to be reached: well under the five seconds
+    /// that the helper would use if the configured timeout were ignored.
+    /// </summary>
+    private static readonly TimeSpan _shortTimeoutGuard = TimeSpan.FromSeconds(4);
 
     [TestMethod]
     public void GetDomain_CachesUnderTheRequestedKey_EvenWhenEHealthNamesTheDomainDifferently()
@@ -84,18 +94,19 @@ public class PseudonymisationHelperDomainCacheTests
     [TestMethod]
     public void GetDomain_WhenEHealthNeverAnswers_GivesUp()
     {
-        // This call to eHealth never answers. Only the five-second give-up lets the load end.
+        // This call to eHealth never answers. Only the give-up after the timeout lets the load end.
         var neverAnswers = new TaskCompletionSource<string>();
-        var helper = CreateHelper(new CountingPseudonymisationClient(() => neverAnswers.Task));
+        var helper = CreateHelper(new CountingPseudonymisationClient(() => neverAnswers.Task), _shortTimeout);
 
         var load = helper.GetDomain(_requestedKey);
-        var endedInTime = Task.WhenAny(load, Task.Delay(_loadTimeout)).Result == load;
+        var endedInTime = Task.WhenAny(load, Task.Delay(_shortTimeoutGuard)).Result == load;
 
         // Let eHealth go, so the test does not leave a task pending behind it.
         neverAnswers.TrySetResult(_answerFromAnotherDomain);
 
         Assert.IsTrue(endedInTime, "Loading the domain waited for eHealth with no time limit.");
         Assert.IsTrue(load.IsFaulted, "Loading the domain should have failed once the time limit was reached.");
+        Assert.IsInstanceOfType(load.Exception!.InnerException, typeof(TimeoutException));
     }
 
     [TestMethod]
@@ -242,10 +253,16 @@ public class PseudonymisationHelperDomainCacheTests
         return new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 
-    private static PseudonymisationHelper CreateHelper(IPseudonymisationClient client)
+    private static PseudonymisationHelper CreateHelper(IPseudonymisationClient client, TimeSpan? timeout = null)
     {
-        return PseudonymisationHelper.Builder()
-            .PseudonymisationClient(client)
+        var builder = PseudonymisationHelper.Builder().PseudonymisationClient(client);
+
+        if (timeout != null)
+        {
+            builder.Timeout(timeout.Value);
+        }
+
+        return builder
             .Build()
             ?? throw new InvalidOperationException("The builder returned no helper.");
     }
@@ -271,22 +288,22 @@ public class PseudonymisationHelperDomainCacheTests
 
         public int GetDomainCalls => _getDomainCalls;
 
-        public Task<string> GetDomain(string domainKey)
+        public Task<string> GetDomain(string domainKey, CancellationToken cancellationToken)
         {
             var call = Interlocked.Increment(ref _getDomainCalls);
             return _answers[Math.Min(call, _answers.Length) - 1]();
         }
 
-        public Task<string> Identify(string domainKey, string payload) => throw new NotSupportedException();
+        public Task<string> Identify(string domainKey, string payload, CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task<string> IdentifyMultiple(string domainKey, string payload) => throw new NotSupportedException();
+        public Task<string> IdentifyMultiple(string domainKey, string payload, CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task<string> Pseudonymize(string domainKey, string payload) => throw new NotSupportedException();
+        public Task<string> Pseudonymize(string domainKey, string payload, CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task<string> PseudonymizeMultiple(string domainKey, string payload) => throw new NotSupportedException();
+        public Task<string> PseudonymizeMultiple(string domainKey, string payload, CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task<string> ConvertTo(string fromDomainKey, string toDomainKey, string payload) => throw new NotSupportedException();
+        public Task<string> ConvertTo(string fromDomainKey, string toDomainKey, string payload, CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task<string> ConvertMultipleTo(string fromDomainKey, string toDomainKey, string payload) => throw new NotSupportedException();
+        public Task<string> ConvertMultipleTo(string fromDomainKey, string toDomainKey, string payload, CancellationToken cancellationToken) => throw new NotSupportedException();
     }
 }

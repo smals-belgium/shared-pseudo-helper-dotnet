@@ -7,7 +7,7 @@ namespace Nihdi.Common.Pseudonymisation.CodeSamples;
 // tag::getdomain[]
 public class MyPseudonymisationClient : IPseudonymisationClient
 {
-    public Task<string> GetDomain(string domainKey)
+    public Task<string> GetDomain(string domainKey, CancellationToken cancellationToken)
     {
         if (domainKey == "ehealth_v1")
         {
@@ -40,32 +40,32 @@ public class MyPseudonymisationClient : IPseudonymisationClient
         // end::retrievedomain[]
     }
 
-    public Task<string> ConvertTo(string fromDomainKey, string toDomainKey, string payload)
+    public Task<string> ConvertTo(string fromDomainKey, string toDomainKey, string payload, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
 
-    public Task<string> ConvertMultipleTo(string fromDomainKey, string toDomainKey, string payload)
+    public Task<string> ConvertMultipleTo(string fromDomainKey, string toDomainKey, string payload, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
 
-    public Task<string> Identify(string domainKey, string payload)
+    public Task<string> Identify(string domainKey, string payload, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
 
-    public Task<string> IdentifyMultiple(string domainKey, string payload)
+    public Task<string> IdentifyMultiple(string domainKey, string payload, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
 
-    public Task<string> Pseudonymize(string domainKey, string payload)
+    public Task<string> Pseudonymize(string domainKey, string payload, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
 
-    public Task<string> PseudonymizeMultiple(string domainKey, string payload)
+    public Task<string> PseudonymizeMultiple(string domainKey, string payload, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }

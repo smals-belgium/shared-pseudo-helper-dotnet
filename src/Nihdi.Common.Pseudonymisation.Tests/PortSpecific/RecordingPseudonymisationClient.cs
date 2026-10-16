@@ -50,19 +50,19 @@ internal sealed class RecordingPseudonymisationClient : IPseudonymisationClient
     /// </summary>
     public List<string> Payloads { get; } = new List<string>();
 
-    public Task<string> GetDomain(string domainKey) => Record(nameof(GetDomain));
+    public Task<string> GetDomain(string domainKey, CancellationToken cancellationToken) => Record(nameof(GetDomain));
 
-    public Task<string> Identify(string domainKey, string payload) => Record(nameof(Identify), payload);
+    public Task<string> Identify(string domainKey, string payload, CancellationToken cancellationToken) => Record(nameof(Identify), payload);
 
-    public Task<string> IdentifyMultiple(string domainKey, string payload) => Record(nameof(IdentifyMultiple), payload);
+    public Task<string> IdentifyMultiple(string domainKey, string payload, CancellationToken cancellationToken) => Record(nameof(IdentifyMultiple), payload);
 
-    public Task<string> Pseudonymize(string domainKey, string payload) => Record(nameof(Pseudonymize), payload);
+    public Task<string> Pseudonymize(string domainKey, string payload, CancellationToken cancellationToken) => Record(nameof(Pseudonymize), payload);
 
-    public Task<string> PseudonymizeMultiple(string domainKey, string payload) => Record(nameof(PseudonymizeMultiple), payload);
+    public Task<string> PseudonymizeMultiple(string domainKey, string payload, CancellationToken cancellationToken) => Record(nameof(PseudonymizeMultiple), payload);
 
-    public Task<string> ConvertTo(string fromDomainKey, string toDomainKey, string payload) => Record(nameof(ConvertTo), payload);
+    public Task<string> ConvertTo(string fromDomainKey, string toDomainKey, string payload, CancellationToken cancellationToken) => Record(nameof(ConvertTo), payload);
 
-    public Task<string> ConvertMultipleTo(string fromDomainKey, string toDomainKey, string payload) => Record(nameof(ConvertMultipleTo), payload);
+    public Task<string> ConvertMultipleTo(string fromDomainKey, string toDomainKey, string payload, CancellationToken cancellationToken) => Record(nameof(ConvertMultipleTo), payload);
 
     private Task<string> Record(string name, string? payload = null)
     {

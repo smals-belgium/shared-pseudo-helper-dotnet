@@ -21,8 +21,9 @@ public interface IMultipleValue : IMultiplePoint<IValue>
     /// first <see cref="IPseudonymInTransit"/> is linked to the first
     /// <see cref="Value"/> you gave, the second one to the secone done,...).
     /// </summary>
+    /// <param name="cancellationToken">Cancels the call: the pending request is told to stop.</param>
     /// <returns>A <see cref="Task{IMultiplePseudonymInTransit}"/> that
     /// contains the pseudonymized values.
     /// </returns>
-    Task<IMultiplePseudonymInTransit> Pseudonymize();
+    Task<IMultiplePseudonymInTransit> Pseudonymize(CancellationToken cancellationToken = default);
 }
