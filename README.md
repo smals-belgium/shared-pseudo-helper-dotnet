@@ -149,7 +149,7 @@ PseudonymizationHelper initialization example
         var helper =
             PseudonymisationHelper.Builder()
             .JwksUrl(new Uri("https://api.ehealth.fgov.be/etee/v1/pubKeys/cacerts/jwks?identifier=0406798006&type=CBE&applicationIdentifier=UHMEP&use=enc"))
-            .JwkSupplier(cancellationToken => Task.FromResult("..."))
+            .JwkSupplier(_ => Task.FromResult("..."))
             .PseudonymisationClient(new PseudonymisationClient())
             .PrivateKeySupplier(domainKey => "...")
             .LoggerFactory(loggerFactory)
@@ -315,6 +315,24 @@ public class MyPseudonymisationClient : IPseudonymisationClient
         throw new ArgumentException($"Could not find domain {domainKey}");
     }
 ```
+
+Example of a `GetDomain` that calls eHealth with an `HttpClient`
+
+``` cs
+    public async Task<string> GetDomain(string domainKey, CancellationToken cancellationToken)
+    {
+        // Check the eHealth Pseudonymisation documentation for the current path.
+        using var response = await _httpClient.GetAsync($"pseudo/v1/domains/{domainKey}", cancellationToken);
+
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync();
+    }
+```
+
+Give the `cancellationToken` to the request, as above. The helper cancels it when
+its timeout is reached: without it, the request goes on and eHealth keeps working
+for a call nobody waits for anymore. The `HttpClient` (base address,
+authentication) is configured by your application.
 
 Example that retrieve the `uhmep_v1` domain
 
@@ -1065,7 +1083,7 @@ In the following example, the pseudonym at rest from the domain `uhmep_v1` will 
 As a REST API, I want to convert a pseudonym in transit of the domain `ehealth_v1` to a pseudonym in transit of the domain `uhmep_v1` (my domain).
 
 ``` cs
-  var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
+  var domain = await _pseudonymisationHelper.GetDomain("ehealth_v1");
 
   var toDomain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
 
