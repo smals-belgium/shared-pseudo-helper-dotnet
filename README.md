@@ -209,7 +209,7 @@ Methods of IPseudonymizationClient
     /// pseudonymisation service: please do not return a cached response.
     /// </summary>
     /// <param name="domainKey">The domain key.</param>
-    /// <param name="cancellationToken">Cancelled when the timeout of the helper is reached or when the caller cancels: stop the request then.</param>
+    /// <param name="cancellationToken">Cancelled when the timeout of the helper is reached: stop the request then. The token of the caller is not passed on, because the load is shared by every caller of the same domain.</param>
     /// <returns>The response as a string.</returns>
     Task<string> GetDomain(string domainKey, CancellationToken cancellationToken = default);
 
@@ -862,7 +862,8 @@ of the helper (five seconds by default), end with a `TimeoutException`,
 and give their own token to your client and to your supplier. The token
 you pass to `GetDomain` and `RefreshDomain` only stops *your* wait: the
 domain is loaded for every caller at once, and the load goes on for the
-others.
+others. Even when you are the only caller, the load runs to its end or to
+the timeout: its result is kept in memory and serves the next call.
 
 ## Pseudonymise an SSIN 
 
