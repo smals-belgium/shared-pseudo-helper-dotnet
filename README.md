@@ -149,7 +149,7 @@ PseudonymizationHelper initialization example
         var helper =
             PseudonymisationHelper.Builder()
             .JwksUrl(new Uri("https://api.ehealth.fgov.be/etee/v1/pubKeys/cacerts/jwks?identifier=0406798006&type=CBE&applicationIdentifier=UHMEP&use=enc"))
-            .JwkSupplier(cancellationToken => Task.FromResult("..."))
+            .JwkSupplier(_ => Task.FromResult("..."))
             .PseudonymisationClient(new PseudonymisationClient())
             .PrivateKeySupplier(domainKey => "...")
             .LoggerFactory(loggerFactory)
@@ -209,7 +209,7 @@ Methods of IPseudonymizationClient
     /// pseudonymisation service: please do not return a cached response.
     /// </summary>
     /// <param name="domainKey">The domain key.</param>
-    /// <param name="cancellationToken">Cancelled when the timeout of the helper is reached or when the caller cancels: stop the request then.</param>
+    /// <param name="cancellationToken">Cancelled when the timeout of the helper is reached: stop the request then. The token of the caller is not passed on, because the load is shared by every caller of the same domain.</param>
     /// <returns>The response as a string.</returns>
     Task<string> GetDomain(string domainKey, CancellationToken cancellationToken = default);
 
@@ -315,6 +315,24 @@ public class MyPseudonymisationClient : IPseudonymisationClient
         throw new ArgumentException($"Could not find domain {domainKey}");
     }
 ```
+
+Example of a `GetDomain` that calls eHealth with an `HttpClient`
+
+``` cs
+    public async Task<string> GetDomain(string domainKey, CancellationToken cancellationToken)
+    {
+        // Check the eHealth Pseudonymisation documentation for the current path.
+        using var response = await _httpClient.GetAsync($"pseudo/v1/domains/{domainKey}", cancellationToken);
+
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync();
+    }
+```
+
+Give the `cancellationToken` to the request, as above. The helper cancels it when
+its timeout is reached: without it, the request goes on and eHealth keeps working
+for a call nobody waits for anymore. The `HttpClient` (base address,
+authentication) is configured by your application.
 
 Example that retrieve the `uhmep_v1` domain
 
@@ -862,7 +880,8 @@ of the helper (five seconds by default), end with a `TimeoutException`,
 and give their own token to your client and to your supplier. The token
 you pass to `GetDomain` and `RefreshDomain` only stops *your* wait: the
 domain is loaded for every caller at once, and the load goes on for the
-others.
+others. Even when you are the only caller, the load runs to its end or to
+the timeout: its result is kept in memory and serves the next call.
 
 ## Pseudonymise an SSIN 
 
@@ -1064,7 +1083,7 @@ In the following example, the pseudonym at rest from the domain `uhmep_v1` will 
 As a REST API, I want to convert a pseudonym in transit of the domain `ehealth_v1` to a pseudonym in transit of the domain `uhmep_v1` (my domain).
 
 ``` cs
-  var domain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
+  var domain = await _pseudonymisationHelper.GetDomain("ehealth_v1");
 
   var toDomain = await _pseudonymisationHelper.GetDomain("uhmep_v1");
 

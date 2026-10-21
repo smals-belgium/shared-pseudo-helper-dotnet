@@ -25,7 +25,7 @@ public interface IPseudonymisationClient
     /// pseudonymisation service: please do not return a cached response.
     /// </summary>
     /// <param name="domainKey">The domain key.</param>
-    /// <param name="cancellationToken">Cancelled when the timeout of the helper is reached or when the caller cancels: stop the request then.</param>
+    /// <param name="cancellationToken">Cancelled when the timeout of the helper is reached: stop the request then. The token of the caller is not passed on, because the load is shared by every caller of the same domain.</param>
     /// <returns>The response as a string.</returns>
     Task<string> GetDomain(string domainKey, CancellationToken cancellationToken = default);
 
