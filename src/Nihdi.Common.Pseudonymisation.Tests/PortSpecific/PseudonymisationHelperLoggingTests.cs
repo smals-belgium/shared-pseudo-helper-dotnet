@@ -34,7 +34,7 @@ public class PseudonymisationHelperLoggingTests
 
         // The failure is found by the exception the supplier threw, not by the wording of the message.
         var entries = loggerFactory.Entries.Where(e => CausesOf(e.Exception).Contains(keyServerFailure)).ToList();
-        Assert.AreNotEqual(0, entries.Count, "The JWKS failure was not logged through the given logger factory.");
+        Assert.AreEqual(1, entries.Count, "The JWKS failure must be logged once, and through the given logger factory.");
         foreach (var entry in entries)
         {
             Assert.AreEqual(LogLevel.Error, entry.Level);

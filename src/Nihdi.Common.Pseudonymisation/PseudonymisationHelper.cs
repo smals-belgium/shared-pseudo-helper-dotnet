@@ -573,20 +573,14 @@ public sealed class PseudonymisationHelper
         {
             return _jwkSet?.Result ?? throw new InvalidOperationException("JwkSet was not initialized.");
         }
-        catch (ThreadInterruptedException ex)
+        catch (ThreadInterruptedException)
         {
-            _logger.LogError(ex, "The current thread was interrupted.");
             FlagJwksForRefresh();
             Thread.CurrentThread.Interrupt();
             throw;
         }
-        catch (AggregateException ex)
+        catch (AggregateException)
         {
-            foreach (var exception in ex.InnerExceptions)
-            {
-                _logger.LogError(exception, exception.Message);
-            }
-
             FlagJwksForRefresh();
             throw;
         }
