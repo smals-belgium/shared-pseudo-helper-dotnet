@@ -36,7 +36,7 @@ public class MultiplePseudonymInTransit
     }
 
     /// <inheritdoc/>
-    Task<IMultiplePseudonymInTransit>? IMultiplePseudonymInTransit.ConvertTo(IDomain toDomain, CancellationToken cancellationToken)
+    public Task<IMultiplePseudonymInTransit> ConvertTo(IDomain toDomain, CancellationToken cancellationToken = default)
     {
         if (toDomain == null)
         {

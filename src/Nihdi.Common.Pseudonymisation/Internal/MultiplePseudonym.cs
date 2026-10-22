@@ -44,7 +44,7 @@ public class MultiplePseudonym : MultiplePoint<IPseudonym>, IMultiplePseudonym
     }
 
     /// <inheritdoc/>
-    Task<MultiplePseudonymInTransit> IMultiplePseudonym.ConvertTo(IDomain toDomain, CancellationToken cancellationToken)
+    public Task<IMultiplePseudonymInTransit> ConvertTo(IDomain toDomain, CancellationToken cancellationToken = default)
     {
         if (Domain.PseudonymisationClient == null)
         {
@@ -55,7 +55,7 @@ public class MultiplePseudonym : MultiplePoint<IPseudonym>, IMultiplePseudonym
 
         if (nbPseudonyms == 0)
         {
-            return Task.FromResult(new MultiplePseudonymInTransit(toDomain));
+            return Task.FromResult((IMultiplePseudonymInTransit)new MultiplePseudonymInTransit(toDomain));
         }
 
         if (nbPseudonyms == 1)
@@ -75,12 +75,12 @@ public class MultiplePseudonym : MultiplePoint<IPseudonym>, IMultiplePseudonym
                 {
                     if (task.Status == TaskStatus.RanToCompletion)
                     {
-                        return new MultiplePseudonymInTransit(toDomain, new List<object> { task.Result });
+                        return (IMultiplePseudonymInTransit)new MultiplePseudonymInTransit(toDomain, new List<object> { task.Result });
                     }
 
                     if (task.Exception?.InnerException is EHealthProblemException eHealthProblemException)
                     {
-                        return new MultiplePseudonymInTransit(toDomain, new List<object> { eHealthProblemException.Problem });
+                        return (IMultiplePseudonymInTransit)new MultiplePseudonymInTransit(toDomain, new List<object> { eHealthProblemException.Problem });
                     }
 
                     task.GetAwaiter().GetResult(); // Rethrows the original exception.
@@ -135,7 +135,7 @@ public class MultiplePseudonym : MultiplePoint<IPseudonym>, IMultiplePseudonym
                     }
                 }
 
-                return pseudonymsInTransit;
+                return (IMultiplePseudonymInTransit)pseudonymsInTransit;
             });
     }
 
