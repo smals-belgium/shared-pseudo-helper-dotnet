@@ -25,8 +25,8 @@ public class JweTokenTests
     [TestMethod]
     public void Deserialize_WhenARecipientHasANullHeader_LeavesItsHeaderNull()
     {
-        // The tests below rely on this: `"header": null` overwrites the empty header a recipient
-        // starts with, so Decrypt really can meet a recipient whose Header is null.
+        // The tests below rely on this: a recipient can come with a null `"header"`, so Decrypt
+        // really can meet a recipient whose Header is null.
         var token = TokenWithRecipients(_headerlessRecipient);
 
         Assert.IsNull(token.Recipients[0].Header);
@@ -65,12 +65,84 @@ public class JweTokenTests
         Assert.AreEqual("myKid", thrown.ParamName);
     }
 
+    [TestMethod]
+    public void Deserialize_WhenARecipientHasNoHeaderField_LeavesItsHeaderNull()
+    {
+        var token = TokenWithRecipients("{}");
+
+        Assert.IsNull(token.Recipients[0].Header);
+    }
+
+    [TestMethod]
+    public void Deserialize_WhenARecipientHeaderHasNoKid_LeavesTheKidNull()
+    {
+        var token = TokenWithRecipients(_recipientWithoutKid);
+
+        Assert.IsNull(token.Recipients[0].Header!.Kid);
+    }
+
+    // An absent field must stay absent on the wire, as Nimbus does, not turn into "".
+    [TestMethod]
+    public void ToString_DoesNotWriteTheRecipientFieldsThatAreAbsent()
+    {
+        var token = TokenWithRecipients(_ourRecipient, "{}");
+
+        var written = token.ToString();
+
+        Assert.IsFalse(written.Contains("\"alg\""), written);
+        Assert.IsFalse(written.Contains("\"jku\""), written);
+        Assert.IsFalse(written.Contains("\"header\": null"), written);
+        Assert.IsFalse(written.Contains("\"\""), written);
+    }
+
+    // Nimbus rejects a null recipient (a ParseException, or a NullPointerException when it sits
+    // next to a real one). Both cases are refused here the same way, with a message that says so.
+    [TestMethod]
+    public void Deserialize_WhenARecipientIsNull_RefusesTheToken()
+    {
+        var thrown = Assert.ThrowsException<ArgumentException>(() => TokenWithRecipients("null"));
+
+        StringAssert.Contains(thrown.Message, "null");
+    }
+
+    [TestMethod]
+    public void Deserialize_WhenANullRecipientSitsNextToARealOne_RefusesTheToken()
+    {
+        Assert.ThrowsException<ArgumentException>(() => TokenWithRecipients("null", _ourRecipient));
+    }
+
+    [TestMethod]
+    public void Deserialize_WhenRecipientsIsEmpty_RefusesTheToken()
+    {
+        var thrown = Assert.ThrowsException<ArgumentException>(() => TokenWithRecipients());
+
+        StringAssert.Contains(thrown.Message, "recipients");
+    }
+
+    [TestMethod]
+    public void Deserialize_WhenRecipientsIsAbsent_RefusesTheToken()
+    {
+        var thrown = Assert.ThrowsException<ArgumentException>(() => TokenFromJson(JsonWith(string.Empty)));
+
+        StringAssert.Contains(thrown.Message, "recipients");
+    }
+
     private static JweToken TokenWithRecipients(params string[] recipientsJson)
     {
-        // "e30" is an empty protected header ({}); the other fields only need to be present.
-        var json = "{\"protected\":\"e30\",\"iv\":\"AAAA\",\"ciphertext\":\"AAAA\",\"tag\":\"AAAA\","
-            + "\"recipients\":[" + string.Join(",", recipientsJson) + "]}";
+        return TokenFromJson(JsonWith("\"recipients\":[" + string.Join(",", recipientsJson) + "]"));
+    }
 
+    // The members every token needs, plus whatever else the test adds. "e30" is an empty
+    // protected header ({}); the other fields only need to be present.
+    private static string JsonWith(string extraMembers)
+    {
+        var members = "{\"protected\":\"e30\",\"iv\":\"AAAA\",\"ciphertext\":\"AAAA\",\"tag\":\"AAAA\"";
+
+        return extraMembers.Length == 0 ? members + "}" : members + "," + extraMembers + "}";
+    }
+
+    private static JweToken TokenFromJson(string json)
+    {
         return JsonSerializer.Deserialize<JweToken>(json)!;
     }
 }

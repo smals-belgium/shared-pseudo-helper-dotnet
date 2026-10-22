@@ -13,15 +13,15 @@ using Nihdi.Common.Pseudonymisation.Jose;
 public class JweRecipientHeaderTests
 {
     [TestMethod]
-    public void Constructor_InitializesPropertiesWithEmptyStrings()
+    public void Constructor_LeavesPropertiesNull()
     {
         // Act
         var header = new JweRecipientHeader();
 
         // Assert
-        Assert.AreEqual(string.Empty, header.Jku);
-        Assert.AreEqual(string.Empty, header.Alg);
-        Assert.AreEqual(string.Empty, header.Kid);
+        Assert.IsNull(header.Jku);
+        Assert.IsNull(header.Alg);
+        Assert.IsNull(header.Kid);
     }
 
     [TestMethod]
@@ -69,9 +69,9 @@ public class JweRecipientHeaderTests
         // Arrange
         var header = new JweRecipientHeader
         {
-            Alg = null!,
-            Jku = null!,
-            Kid = null!
+            Alg = null,
+            Jku = null,
+            Kid = null
         };
 
         // Act
@@ -273,7 +273,7 @@ public class JweRecipientHeaderTests
     }
 
     [TestMethod]
-    public void JsonDeserialization_WithMissingProperties_SetsToEmptyStrings()
+    public void JsonDeserialization_WithMissingProperties_LeavesThemNull()
     {
         // Arrange
         var json = "{\"alg\":\"RSA1_5\"}";
@@ -284,12 +284,12 @@ public class JweRecipientHeaderTests
         // Assert
         Assert.IsNotNull(header);
         Assert.AreEqual("RSA1_5", header.Alg);
-        Assert.AreEqual(string.Empty, header.Jku);
-        Assert.AreEqual(string.Empty, header.Kid);
+        Assert.IsNull(header.Jku);
+        Assert.IsNull(header.Kid);
     }
 
     [TestMethod]
-    public void JsonDeserialization_EmptyJson_CreatesObjectWithEmptyProperties()
+    public void JsonDeserialization_EmptyJson_LeavesAllPropertiesNull()
     {
         // Arrange
         var json = "{}";
@@ -299,8 +299,8 @@ public class JweRecipientHeaderTests
 
         // Assert
         Assert.IsNotNull(header);
-        Assert.AreEqual(string.Empty, header.Alg);
-        Assert.AreEqual(string.Empty, header.Jku);
-        Assert.AreEqual(string.Empty, header.Kid);
+        Assert.IsNull(header.Alg);
+        Assert.IsNull(header.Jku);
+        Assert.IsNull(header.Kid);
     }
 }

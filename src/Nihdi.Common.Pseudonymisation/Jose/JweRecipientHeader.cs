@@ -22,7 +22,7 @@ public class JweRecipientHeader
     /// </summary>
     /// <value>The JWK Set URL.</value>
     [JsonPropertyName("jku")]
-    public string Jku { get; set; } = string.Empty;
+    public string? Jku { get; set; }
 
     /// <summary>
     /// Gets or sets the algorithm ("alg") parameter identifying the cryptographic algorithm
@@ -30,7 +30,7 @@ public class JweRecipientHeader
     /// </summary>
     /// <value>The algorithm used to encrypt or determine the CEK.</value>
     [JsonPropertyName("alg")]
-    public string Alg { get; set; } = string.Empty;
+    public string? Alg { get; set; }
 
     /// <summary>
     /// Gets or sets the key ID ("kid") parameter that is a hint indicating which key was used
@@ -38,7 +38,7 @@ public class JweRecipientHeader
     /// </summary>
     /// <value>The key ID.</value>
     [JsonPropertyName("kid")]
-    public string Kid { get; set; } = string.Empty;
+    public string? Kid { get; set; }
 
     /// <summary>
     /// Converts the JWE recipient header into a dictionary representation.

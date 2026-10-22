@@ -25,7 +25,7 @@ public class JweRecipient
     /// <summary>
     /// Gets or sets the recipient-specific header parameters.
     /// </summary>
-    /// <value>The recipient-specific header parameters.</value>
+    /// <value>The recipient-specific header parameters, or null when the recipient has none.</value>
     [JsonPropertyName("header")]
-    public JweRecipientHeader Header { get; set; } = new JweRecipientHeader();
+    public JweRecipientHeader? Header { get; set; }
 }
