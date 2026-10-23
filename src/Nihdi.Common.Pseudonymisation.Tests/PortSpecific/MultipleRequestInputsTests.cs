@@ -2,7 +2,7 @@
 // Copyright (c) Riziv-Inami. All rights reserved.
 // </copyright>
 
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 
 namespace Nihdi.Common.Pseudonymisation.Tests.PortSpecific;
 
@@ -52,7 +52,7 @@ public class MultipleRequestInputsTests
     {
         var payload = SendTwoElements(operation);
 
-        var inputs = JObject.Parse(payload)["inputs"] as JArray;
+        var inputs = JsonNode.Parse(payload)!["inputs"] as JsonArray;
         Assert.IsNotNull(inputs, $"`inputs` should be a JSON array: {payload}");
         Assert.AreEqual(2, inputs.Count);
 
@@ -60,10 +60,7 @@ public class MultipleRequestInputsTests
         // element itself.
         foreach (var input in inputs)
         {
-            Assert.AreEqual(
-                JTokenType.Object,
-                input.Type,
-                $"Each input should be a JSON object: {payload}");
+            Assert.IsInstanceOfType(input, typeof(JsonObject), $"Each input should be a JSON object: {payload}");
         }
     }
 
@@ -76,7 +73,7 @@ public class MultipleRequestInputsTests
     {
         var payload = SendTwoElements(operation);
 
-        // JObject indents its output by default, which would make every request to eHealth larger.
+        // An indented body would make every request to eHealth larger.
         Assert.IsFalse(payload.Contains('\n'), $"The payload should be compact but contains a newline: {payload}");
     }
 

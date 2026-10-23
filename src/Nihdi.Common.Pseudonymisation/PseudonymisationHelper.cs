@@ -12,7 +12,6 @@ using System.Xml;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json.Linq;
 using Nihdi.Common.Pseudonymisation.Internal;
 using Nihdi.Common.Pseudonymisation.Jose;
 using Org.BouncyCastle.Crypto;

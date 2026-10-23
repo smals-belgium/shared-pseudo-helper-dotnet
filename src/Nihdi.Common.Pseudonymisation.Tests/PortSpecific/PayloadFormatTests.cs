@@ -15,6 +15,15 @@ public class PayloadFormatTests
 {
     private const string _domainKey = "test";
 
+    // Coordinates of a valid P-521 point, taken from the existing tests. `_y` contains a `+`.
+    private const string _x =
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDEy" +
+        "MzQ1Njc4OTEwDAAAAAAAAAAB";
+
+    private const string _y =
+        "ABxCeSYmGgumIwOuFyKmK1l8bilTjL+NK" +
+        "Elpegi8mcsn3QB6grG5PHpgD8XCTPTGhDrT6HsGuEkEOVwZ23maSliV";
+
     [TestMethod]
     public void CreatePayload_ProducesCompactJson()
     {
@@ -35,9 +44,25 @@ public class PayloadFormatTests
         Assert.AreEqual(1, client.Payloads.Count);
         var payload = client.Payloads[0];
 
-        // JObject indents its output by default, which would make every request to eHealth larger.
+        // An indented body would make every request to eHealth larger.
         StringAssert.Contains(payload, "\"crv\":\"P-521\"");
         Assert.IsFalse(payload.Contains('\n'), $"The payload should be compact but contains a newline: {payload}");
+    }
+
+    [TestMethod]
+    public void CreatePayload_KeepsThePlusSignsOfTheBase64CoordinatesUnescaped()
+    {
+        var domain = CreateDomain(new RecordingPseudonymisationClient());
+
+        // The coordinates are standard base64, so they contain `+`. The default JSON encoder would
+        // write it as a Unicode escape, which differs from what the Java helper sends.
+        var pseudonym = domain.PseudonymFactory.FromXy(_x, _y);
+        Assert.IsTrue(pseudonym.Y().Contains('+'), "The test needs a coordinate that contains a `+`.");
+
+        var payload = domain.CreatePayloadString(pseudonym);
+
+        StringAssert.Contains(payload, $"\"y\":\"{pseudonym.Y()}\"");
+        Assert.IsFalse(payload.Contains("\\u"), $"The payload should not contain a Unicode escape: {payload}");
     }
 
     private static Domain CreateDomain(IPseudonymisationClient client)

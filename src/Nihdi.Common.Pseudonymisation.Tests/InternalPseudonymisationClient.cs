@@ -4,7 +4,7 @@
 
 namespace Nihdi.Common.Pseudonymisation.Tests;
 
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 using Nihdi.Common.Pseudonymisation;
 
 internal class InternalPseudonymisationClient : IPseudonymisationClient
@@ -38,7 +38,7 @@ internal class InternalPseudonymisationClient : IPseudonymisationClient
     public async Task<string> Identify(string domainKey, string payload, CancellationToken cancellationToken)
     {
         var now = _timeProvider.GetUtcNow();
-        var jsonObject = JObject.Parse(payload);
+        var jsonObject = JsonNode.Parse(payload)!.AsObject();
 
         return await _internalPseudonymisationHelper!
             .GetDomain("uhmep_v1")
@@ -50,24 +50,24 @@ internal class InternalPseudonymisationClient : IPseudonymisationClient
              var pseudonymInTransit = uhmepV1.Result?.PseudonymInTransitFactory.FromXYAndTransitInfo(x, y, transitInfo);
              var pseudonymAtRest = pseudonymInTransit?.AtRest();
 
-             var response = new JObject();
-             response.Add("id", new JValue(Guid.NewGuid().ToString()));
-             response.Add("domain", new JValue(domainKey));
-             response.Add("crv", new JValue("P-521"));
-             response.Add("iat", new JValue(now.ToUnixTimeSeconds()));
-             response.Add("exp", new JValue(now.AddHours(1).ToUnixTimeSeconds()));
-             response.Add("x", new JValue(pseudonymAtRest?.X()));
-             response.Add("y", new JValue(pseudonymAtRest?.Y()));
+             var response = new JsonObject();
+             response.Add("id", Guid.NewGuid().ToString());
+             response.Add("domain", domainKey);
+             response.Add("crv", "P-521");
+             response.Add("iat", now.ToUnixTimeSeconds());
+             response.Add("exp", now.AddHours(1).ToUnixTimeSeconds());
+             response.Add("x", pseudonymAtRest?.X());
+             response.Add("y", pseudonymAtRest?.Y());
 
-             return response.ToString();
+             return response.ToJsonString();
          });
     }
 
     public Task<string> IdentifyMultiple(string domainKey, string payload, CancellationToken cancellationToken)
     {
         var now = _timeProvider.GetUtcNow();
-        var jsonObject = JObject.Parse(payload);
-        var inputs = jsonObject["inputs"] as JArray;
+        var jsonObject = JsonNode.Parse(payload)!.AsObject();
+        var inputs = jsonObject["inputs"] as JsonArray;
 
         if (inputs == null)
         {
@@ -79,15 +79,15 @@ internal class InternalPseudonymisationClient : IPseudonymisationClient
             throw new InvalidOperationException("internalPseudonymisationHelper is null");
         }
 
-        var outputs = new JArray();
-        var response = new JObject();
-        response.Add("id", new JValue(Guid.NewGuid().ToString()));
-        response.Add("domain", new JValue(domainKey));
+        var outputs = new JsonArray();
+        var response = new JsonObject();
+        response.Add("id", Guid.NewGuid().ToString());
+        response.Add("domain", domainKey);
         response.Add("outputs", outputs);
 
         for (int i = 0; i < inputs.Count; i++)
         {
-            var input = (JObject)inputs[i];
+            var input = (JsonObject)inputs[i]!;
             var x = input["x"]?.ToString() ?? throw new InvalidOperationException("x cannot be null");
             var y = input["y"]?.ToString() ?? throw new InvalidOperationException("y cannot be null");
             var transitInfo = input["transitInfo"]?.ToString() ?? throw new InvalidOperationException("transitInfo cannot be null");
@@ -100,25 +100,25 @@ internal class InternalPseudonymisationClient : IPseudonymisationClient
                     var pseudonymAtRest = pseudonymInTransit?.AtRest();
                     var value = ((Pseudonym?)pseudonymAtRest)?.AsValue();
 
-                    var outputObj = new JObject();
-                    outputObj.Add("id", new JValue(Guid.NewGuid().ToString()));
-                    outputObj.Add("domain", new JValue(domainKey));
-                    outputObj.Add("iat", new JValue(now.ToUnixTimeSeconds()));
-                    outputObj.Add("exp", new JValue(now.AddHours(1).ToUnixTimeSeconds()));
-                    outputObj.Add("x", new JValue(value?.X()));
-                    outputObj.Add("y", new JValue(value?.Y()));
+                    var outputObj = new JsonObject();
+                    outputObj.Add("id", Guid.NewGuid().ToString());
+                    outputObj.Add("domain", domainKey);
+                    outputObj.Add("iat", now.ToUnixTimeSeconds());
+                    outputObj.Add("exp", now.AddHours(1).ToUnixTimeSeconds());
+                    outputObj.Add("x", value?.X());
+                    outputObj.Add("y", value?.Y());
 
                     outputs.Add(outputObj);
                 }).Wait();
         }
 
-        return Task.FromResult(response.ToString());
+        return Task.FromResult(response.ToJsonString());
     }
 
     public async Task<string> Pseudonymize(string domainKey, string payload, CancellationToken cancellationToken)
     {
         var now = _timeProvider.GetUtcNow();
-        var jsonObject = JObject.Parse(payload);
+        var jsonObject = JsonNode.Parse(payload)!.AsObject();
 
         if (_internalPseudonymisationHelper == null)
         {
@@ -134,24 +134,24 @@ internal class InternalPseudonymisationClient : IPseudonymisationClient
                 var fakePseudonym = uhmepV1?.Result?.PseudonymFactory.FromXy(pseudonym?.X()!, pseudonym?.Y()!);
                 var pseudonymInTransit = fakePseudonym?.InTransit();
 
-                var response = new JObject();
-                response.Add("id", new JValue(Guid.NewGuid().ToString()));
-                response.Add("domain", new JValue(domainKey));
-                response.Add("crv", new JValue("P-521"));
-                response.Add("iat", new JValue(now.ToUnixTimeSeconds()));
-                response.Add("exp", new JValue(now.AddHours(1).ToUnixTimeSeconds()));
-                response.Add("x", new JValue(pseudonymInTransit?.X()));
-                response.Add("y", new JValue(pseudonymInTransit?.Y()));
-                response.Add("transitInfo", new JValue(pseudonymInTransit?.GetTransitInfo().AsString()));
-                return response.ToString();
+                var response = new JsonObject();
+                response.Add("id", Guid.NewGuid().ToString());
+                response.Add("domain", domainKey);
+                response.Add("crv", "P-521");
+                response.Add("iat", now.ToUnixTimeSeconds());
+                response.Add("exp", now.AddHours(1).ToUnixTimeSeconds());
+                response.Add("x", pseudonymInTransit?.X());
+                response.Add("y", pseudonymInTransit?.Y());
+                response.Add("transitInfo", pseudonymInTransit?.GetTransitInfo().AsString());
+                return response.ToJsonString();
             });
     }
 
     public Task<string> PseudonymizeMultiple(string domainKey, string payload, CancellationToken cancellationToken)
     {
         var now = _timeProvider.GetUtcNow();
-        var jsonObject = JObject.Parse(payload);
-        var inputs = jsonObject["inputs"] as JArray;
+        var jsonObject = JsonNode.Parse(payload)!.AsObject();
+        var inputs = jsonObject["inputs"] as JsonArray;
 
         if (inputs == null)
         {
@@ -163,10 +163,10 @@ internal class InternalPseudonymisationClient : IPseudonymisationClient
             throw new InvalidOperationException("internalPseudonymisationHelper is null");
         }
 
-        var outputs = new JArray();
-        var response = new JObject();
-        response.Add("id", new JValue(Guid.NewGuid().ToString()));
-        response.Add("domain", new JValue(domainKey));
+        var outputs = new JsonArray();
+        var response = new JsonObject();
+        response.Add("id", Guid.NewGuid().ToString());
+        response.Add("domain", domainKey);
         response.Add("outputs", outputs);
 
         for (int i = 0; i < inputs.Count; i++)
@@ -176,26 +176,26 @@ internal class InternalPseudonymisationClient : IPseudonymisationClient
                 .GetDomain("uhmep_v1")
                 .ContinueWith(uhmepV1 =>
                 {
-                    var inputObj = (JObject)input;
+                    var inputObj = (JsonObject)input!;
                     var pseudonym = uhmepV1.Result?.PseudonymFactory.FromXy(inputObj["x"]?.ToString()!, inputObj["y"]?.ToString()!);
                     var fakePseudonym = uhmepV1.Result?.PseudonymFactory.FromXy(pseudonym?.X()!, pseudonym?.Y()!);
                     var pseudonymInTransit = fakePseudonym?.InTransit();
 
-                    var outputObj = new JObject();
-                    outputObj.Add("id", new JValue(Guid.NewGuid().ToString()));
-                    outputObj.Add("domain", new JValue(domainKey));
-                    outputObj.Add("crv", new JValue("P-521"));
-                    outputObj.Add("iat", new JValue(now.ToUnixTimeSeconds()));
-                    outputObj.Add("exp", new JValue(now.AddHours(1).ToUnixTimeSeconds()));
-                    outputObj.Add("x", new JValue(pseudonymInTransit?.X()));
-                    outputObj.Add("y", new JValue(pseudonymInTransit?.Y()));
-                    outputObj.Add("transitInfo", new JValue(pseudonymInTransit?.GetTransitInfo().AsString()));
+                    var outputObj = new JsonObject();
+                    outputObj.Add("id", Guid.NewGuid().ToString());
+                    outputObj.Add("domain", domainKey);
+                    outputObj.Add("crv", "P-521");
+                    outputObj.Add("iat", now.ToUnixTimeSeconds());
+                    outputObj.Add("exp", now.AddHours(1).ToUnixTimeSeconds());
+                    outputObj.Add("x", pseudonymInTransit?.X());
+                    outputObj.Add("y", pseudonymInTransit?.Y());
+                    outputObj.Add("transitInfo", pseudonymInTransit?.GetTransitInfo().AsString());
 
                     outputs.Add(outputObj);
                 }).Wait();
         }
 
-        return Task.FromResult(response.ToString());
+        return Task.FromResult(response.ToJsonString());
     }
 
     public Task<string> ConvertMultipleTo(string fromDomainKey, string toDomainKey, string payload, CancellationToken cancellationToken)
