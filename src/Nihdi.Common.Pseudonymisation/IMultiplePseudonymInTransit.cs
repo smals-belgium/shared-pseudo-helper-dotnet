@@ -28,7 +28,7 @@ public interface IMultiplePseudonymInTransit : IMultiplePoint<IPseudonymInTransi
     /// converted <see cref="IPseudonym"/>s for the given
     /// <see cref="IDomain"/>.
     /// </returns>
-    Task<IMultiplePseudonymInTransit>? ConvertTo(IDomain toDomain, CancellationToken cancellationToken = default);
+    Task<IMultiplePseudonymInTransit> ConvertTo(IDomain toDomain, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Identify all <see cref="IPseudonymInTransit"/>s in this collection.

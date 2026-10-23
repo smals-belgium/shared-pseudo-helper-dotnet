@@ -107,19 +107,19 @@ public class CancellationTests
 
         yield return Operation(
             "MultiplePseudonym.ConvertTo, one element",
-            (domain, toDomain, token) => ((IMultiplePseudonym)new MultiplePseudonym(domain, Pseudonyms(domain, 1))).ConvertTo(toDomain, token));
+            (domain, toDomain, token) => new MultiplePseudonym(domain, Pseudonyms(domain, 1)).ConvertTo(toDomain, token));
 
         yield return Operation(
             "MultiplePseudonym.ConvertTo, two elements",
-            (domain, toDomain, token) => ((IMultiplePseudonym)new MultiplePseudonym(domain, Pseudonyms(domain, 2))).ConvertTo(toDomain, token));
+            (domain, toDomain, token) => new MultiplePseudonym(domain, Pseudonyms(domain, 2)).ConvertTo(toDomain, token));
 
         yield return Operation(
             "MultiplePseudonymInTransit.ConvertTo, one element",
-            (domain, toDomain, token) => ((IMultiplePseudonymInTransit)new MultiplePseudonymInTransit(domain, PseudonymsInTransit(domain, 1))).ConvertTo(toDomain, token)!);
+            (domain, toDomain, token) => new MultiplePseudonymInTransit(domain, PseudonymsInTransit(domain, 1)).ConvertTo(toDomain, token));
 
         yield return Operation(
             "MultiplePseudonymInTransit.ConvertTo, two elements",
-            (domain, toDomain, token) => ((IMultiplePseudonymInTransit)new MultiplePseudonymInTransit(domain, PseudonymsInTransit(domain, 2))).ConvertTo(toDomain, token)!);
+            (domain, toDomain, token) => new MultiplePseudonymInTransit(domain, PseudonymsInTransit(domain, 2)).ConvertTo(toDomain, token));
 
         yield return Operation(
             "MultiplePseudonymInTransit.Identify, one element",
@@ -134,8 +134,9 @@ public class CancellationTests
     [DynamicData(nameof(OperationsOfOneCaller), DynamicDataSourceType.Method)]
     public void Operation_WhenTheCallerCancels_StopsAndTellsTheClient(
         string name,
-        Func<Domain, Domain, CancellationToken, Task> start)
+        object startOperation)
     {
+        var start = (Func<Domain, Domain, CancellationToken, Task>)startOperation;
         var client = new TokenObservingClient();
         using var caller = new CancellationTokenSource();
 
@@ -154,8 +155,9 @@ public class CancellationTests
     [DynamicData(nameof(OperationsOfOneCaller), DynamicDataSourceType.Method)]
     public void Operation_WhenTheTokenIsAlreadyCancelled_TheClientKnowsFromTheStart(
         string name,
-        Func<Domain, Domain, CancellationToken, Task> start)
+        object startOperation)
     {
+        var start = (Func<Domain, Domain, CancellationToken, Task>)startOperation;
         var client = new TokenObservingClient();
 
         var operation = start(CreateDomain(_domainKey, client), CreateDomain(_targetDomainKey, client), new CancellationToken(true));
@@ -170,8 +172,9 @@ public class CancellationTests
     [DynamicData(nameof(OperationsOfOneCaller), DynamicDataSourceType.Method)]
     public void Operation_WhenTheClientIgnoresTheToken_TheCallerStillStopsWaiting(
         string name,
-        Func<Domain, Domain, CancellationToken, Task> start)
+        object startOperation)
     {
+        var start = (Func<Domain, Domain, CancellationToken, Task>)startOperation;
         var client = new TokenObservingClient(honoursTheToken: false);
         using var caller = new CancellationTokenSource();
 

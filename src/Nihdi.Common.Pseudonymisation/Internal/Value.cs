@@ -10,7 +10,7 @@ using Nihdi.Common.Pseudonymisation;
 using Org.BouncyCastle.Math.EC;
 
 /// <inheritdoc/>
-public class Value : Pseudonym, IValue
+internal class Value : Pseudonym, IValue
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="Value"/> class.

@@ -10,7 +10,7 @@ using Nihdi.Common.Pseudonymisation.Exceptions;
 /// Represents a collection of cryptographic points used in pseudonymisation operations.
 /// </summary>
 /// <typeparam name="TPoint">A type that implements <see cref="IPoint"/>.</typeparam>
-public abstract class MultiplePoint<TPoint> : IMultiplePoint<TPoint>
+internal abstract class MultiplePoint<TPoint> : IMultiplePoint<TPoint>
     where TPoint : IPoint
 {
     private const int _maxCollectionSize = 10;

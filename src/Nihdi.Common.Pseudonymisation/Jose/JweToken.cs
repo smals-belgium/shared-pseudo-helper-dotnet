@@ -46,8 +46,24 @@ public class JweToken
         AuthenticationTag = authenticationTag
              ?? throw new ArgumentNullException(nameof(AuthenticationTag), "AuthenticationTag is required.");
 
-        Recipients = recipients
-            ?? throw new ArgumentException("Recipients list must not be empty.");
+        if (recipients == null)
+        {
+            throw new ArgumentException("The recipients of the JWE token are required.", nameof(recipients));
+        }
+
+        if (recipients.Count == 0)
+        {
+            throw new ArgumentException("The recipients of the JWE token must not be an empty list.", nameof(recipients));
+        }
+
+        // The list type says its elements are never null, but a JSON `null` in the array gets in
+        // anyway. Refuse it here, once, rather than meet it as a NullReferenceException in Decrypt.
+        if (recipients.Contains(null!))
+        {
+            throw new ArgumentException("A recipient of the JWE token is null.", nameof(recipients));
+        }
+
+        Recipients = recipients;
     }
 
     /// <summary>
@@ -131,8 +147,9 @@ public class JweToken
         // Find the correct recipient by "kid". A recipient can come with no header at all,
         // so ask for the kid without assuming there is one.
         var recipient = Recipients.FirstOrDefault(r => r.Header?.Kid == myKid);
+        var recipientHeader = recipient?.Header;
 
-        if (recipient == null)
+        if (recipient == null || recipientHeader == null)
         {
             throw new InvalidOperationException($"Recipient with kid '{myKid}' not found.");
         }
@@ -184,7 +201,7 @@ public class JweToken
             "RSA-OAEP-256" => DecryptWithRsa(jwk, encryptedKey, RSAEncryptionPadding.OaepSHA256),
             "RSA1_5" => DecryptWithRsa(jwk, encryptedKey, RSAEncryptionPadding.Pkcs1),
             "dir" => Base64UrlEncoder.DecodeBytes(jwk.K),
-            "ECDH-ES" => DeriveKeyWithEcdhEs(jwk, protectedHeader, recipient.Header.ToDictionary()),
+            "ECDH-ES" => DeriveKeyWithEcdhEs(jwk, protectedHeader, recipientHeader.ToDictionary()),
             "ECDH-ES+A256KW" => DeriveKeyWithEcdhEs(jwk, protectedHeader),
             _ => throw new CryptographicException($"Unsupported key encryption algorithm: {alg}. "),
         };

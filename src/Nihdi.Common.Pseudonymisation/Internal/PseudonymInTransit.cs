@@ -10,7 +10,7 @@ using Nihdi.Common.Pseudonymisation.Utils;
 using Org.BouncyCastle.Math;
 
 /// <inheritdoc/>
-public class PseudonymInTransit : IPseudonymInTransit
+internal class PseudonymInTransit : IPseudonymInTransit
 {
     private readonly Pseudonym _pseudonym;
     private readonly TransitInfo _transitInfo;
@@ -34,6 +34,9 @@ public class PseudonymInTransit : IPseudonymInTransit
 
     /// <inheritdoc/>
     public Domain Domain => _pseudonym.Domain;
+
+    /// <inheritdoc/>
+    IDomain IPoint.Domain => Domain;
 
     /// <inheritdoc/>
     public string X()

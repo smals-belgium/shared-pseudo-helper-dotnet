@@ -7,7 +7,7 @@ namespace Nihdi.Common.Pseudonymisation.Internal;
 /// <summary>
 /// Service to get the current date and time.
 /// </summary>
-public class DateTimeService : IDateTimeService
+internal class DateTimeService : IDateTimeService
 {
     /// <inheritdoc/>
     public DateTime Now

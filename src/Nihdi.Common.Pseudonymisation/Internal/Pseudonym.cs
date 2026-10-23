@@ -9,7 +9,7 @@ using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Math.EC;
 
 /// <inheritdoc/>
-public class Pseudonym : Point, IPseudonym
+internal class Pseudonym : Point, IPseudonym
 {
     private readonly ITransitInfoCustomizer _noOpTransitInfoCustomizer = new DefaultTransitInfoCustomizer();
 

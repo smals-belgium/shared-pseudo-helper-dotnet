@@ -4,8 +4,6 @@
 
 namespace Nihdi.Common.Pseudonymisation;
 
-using Nihdi.Common.Pseudonymisation.Internal;
-
 /// <summary>
 /// Interface representing a point on an elliptic curve.
 /// </summary>
@@ -15,7 +13,7 @@ public interface IPoint
     /// Gets get the domain that owns this point.
     /// </summary>
     /// <value>The domain that owns this point.</value>
-    Domain Domain
+    IDomain Domain
     {
         get;
     }

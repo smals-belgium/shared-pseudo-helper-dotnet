@@ -11,7 +11,7 @@ using Org.BouncyCastle.Math;
 /// <summary>
 /// Collection of <see cref="IPseudonymInTransit"/>s, all belonging to the same.
 /// </summary>
-public class MultiplePseudonymInTransit
+internal class MultiplePseudonymInTransit
     : MultiplePoint<IPseudonymInTransit>, IMultiplePseudonymInTransit
 {
     /// <summary>
@@ -36,7 +36,7 @@ public class MultiplePseudonymInTransit
     }
 
     /// <inheritdoc/>
-    Task<IMultiplePseudonymInTransit>? IMultiplePseudonymInTransit.ConvertTo(IDomain toDomain, CancellationToken cancellationToken)
+    public Task<IMultiplePseudonymInTransit> ConvertTo(IDomain toDomain, CancellationToken cancellationToken = default)
     {
         if (toDomain == null)
         {

@@ -535,8 +535,9 @@ public sealed class PseudonymisationHelper
         var kids = parsedJwe.Recipients
             .Select(recipient => recipient.Header)
             .Where(header => header != null && jku == header.Jku)
-            .Select(header => header.Kid)
-            .Where(kid => !string.IsNullOrEmpty(kid))
+            .Select(header => header!.Kid)
+            .Where(kid => kid != null)
+            .Select(kid => kid!)
             .ToList();
 
         if (kids.Count == 0)

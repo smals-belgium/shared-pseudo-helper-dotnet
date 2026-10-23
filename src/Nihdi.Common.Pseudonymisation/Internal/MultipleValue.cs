@@ -10,7 +10,7 @@ using Nihdi.Common.Pseudonymisation.Exceptions;
 using Org.BouncyCastle.Math;
 
 /// <inheritdoc/>
-public class MultipleValue : MultiplePoint<IValue>, IMultipleValue
+internal class MultipleValue : MultiplePoint<IValue>, IMultipleValue
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="MultipleValue"/> class.

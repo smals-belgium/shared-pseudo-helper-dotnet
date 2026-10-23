@@ -12,7 +12,7 @@ using Org.BouncyCastle.Math.EC;
 using static Nihdi.Common.Pseudonymisation.Internal.Point;
 
 /// <inheritdoc/>
-public class PseudonymFactory : PointFactory, IPseudonymFactory
+internal class PseudonymFactory : PointFactory, IPseudonymFactory
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="PseudonymFactory"/> class.

@@ -13,7 +13,7 @@ using Nihdi.Common.Pseudonymisation;
 /// The PointFactory serves as a foundation for specialized point creation mechanisms.
 /// Derived classes must implement the specific point creation logic.
 /// </remarks>
-public abstract class PointFactory
+internal abstract class PointFactory
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="PointFactory"/> class.

@@ -38,7 +38,7 @@ public class MultiplePseudonymSingleElementTests
         var client = new RecordingPseudonymisationClient();
         var multiple = CreateSingleElementCollection(client, out var toDomain);
 
-        Ignoring(((IMultiplePseudonym)multiple).ConvertTo(toDomain));
+        Ignoring(multiple.ConvertTo(toDomain));
 
         CollectionAssert.AreEqual(new[] { "ConvertTo" }, client.Calls);
     }
@@ -49,7 +49,7 @@ public class MultiplePseudonymSingleElementTests
         var client = new RecordingPseudonymisationClient(_problemResponse);
         var multiple = CreateSingleElementCollection(client, out var toDomain);
 
-        var converted = ((IMultiplePseudonym)multiple).ConvertTo(toDomain).Result;
+        var converted = multiple.ConvertTo(toDomain).Result;
 
         Assert.AreEqual(1, converted.Size());
         Assert.ThrowsException<EHealthProblemException>(() => _ = converted[0]);
