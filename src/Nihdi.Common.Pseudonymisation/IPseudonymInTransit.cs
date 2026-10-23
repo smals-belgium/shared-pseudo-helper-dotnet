@@ -11,6 +11,10 @@ using Nihdi.Common.Pseudonymisation.Internal;
 /// <summary>
 /// A pseudonym in transit is a pseudonym that is encrypted for transit between two domains.
 /// </summary>
+/// <remarks>
+/// Two pseudonyms in transit are equal when they wrap equal pseudonyms and have the same transit info.
+/// To compare the pseudonyms themselves, compare the results of <see cref="Pseudonym()"/>.
+/// </remarks>
 public interface IPseudonymInTransit : IPoint
 {
     /// <summary>
