@@ -36,6 +36,9 @@ public class PseudonymInTransit : IPseudonymInTransit
     public Domain Domain => _pseudonym.Domain;
 
     /// <inheritdoc/>
+    IDomain IPoint.Domain => Domain;
+
+    /// <inheritdoc/>
     public string X()
     {
         return _pseudonym.X();

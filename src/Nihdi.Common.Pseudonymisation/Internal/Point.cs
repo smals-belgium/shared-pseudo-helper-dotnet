@@ -28,6 +28,9 @@ public abstract class Point : IPoint
         get; private set;
     }
 
+    /// <inheritdoc/>
+    IDomain IPoint.Domain => Domain;
+
     /// <summary>
     /// Gets the elliptic curve point.
     /// </summary>
