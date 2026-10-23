@@ -22,7 +22,10 @@ internal abstract class Point : IPoint
         Domain = (Domain)domainImpl;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Gets the domain that owns this point, as its implementation class.
+    /// </summary>
+    /// <value>The domain that owns this point.</value>
     public Domain Domain
     {
         get; private set;
@@ -95,10 +98,9 @@ internal abstract class Point : IPoint
             return false;
         }
 
-        // Compare with the X of the other point. This differs from the Java version on purpose:
-        // Java compares this point with itself, so any two points of a domain are equal there.
-        // Java also handles a pseudonym in transit here. C# does not need to: PseudonymInTransit
-        // is not a Point, so it is already rejected by the check above.
+        // Compare with the X of the other point. Comparing the X of this point with itself would make
+        // every pair of points of a domain equal. A pseudonym in transit does not derive from Point,
+        // so the type check above already rejects it.
         return Equals(EcPoint.XCoord, point.EcPoint.XCoord);
     }
 

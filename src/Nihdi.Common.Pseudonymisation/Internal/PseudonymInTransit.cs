@@ -31,7 +31,10 @@ internal class PseudonymInTransit : IPseudonymInTransit
         this._decryptedPseudonym = decryptedPseudonym;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Gets the domain that owns this pseudonym in transit, as its implementation class.
+    /// </summary>
+    /// <value>The domain that owns this pseudonym in transit.</value>
     public Domain Domain => _pseudonym.Domain;
 
     /// <inheritdoc/>

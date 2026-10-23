@@ -7,6 +7,9 @@ namespace Nihdi.Common.Pseudonymisation;
 /// <summary>
 /// Interface representing a point on an elliptic curve.
 /// </summary>
+/// <remarks>
+/// Two points are equal when they belong to the same domain and have the same X coordinate.
+/// </remarks>
 public interface IPoint
 {
     /// <summary>
