@@ -5,7 +5,7 @@
 namespace Nihdi.Common.Pseudonymisation.Internal;
 
 using System.Collections.ObjectModel;
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 using Nihdi.Common.Pseudonymisation.Exceptions;
 using Org.BouncyCastle.Math;
 
@@ -76,16 +76,16 @@ internal class PseudonymInTransitFactory : PointFactory, IPseudonymInTransitFact
     /// <returns>A new instance of <see cref="IPseudonymInTransit"/>.</returns>
     public IPseudonymInTransit FromRawResponse(string rawResponse, BigInteger scalar)
     {
-        return FromResponse(JObject.Parse(rawResponse), scalar);
+        return FromResponse(JsonHelper.Parse(rawResponse), scalar);
     }
 
     /// <summary>
     /// Creates a <see cref="IPseudonymInTransit"/> from the given response and scalar.
     /// </summary>
-    /// <param name="response">A <see cref="JObject"/> representing the response.</param>
+    /// <param name="response">A <see cref="JsonObject"/> representing the response.</param>
     /// <param name="scalar">A <see cref="BigInteger"/> instance representing the scalar value.</param>
     /// <returns>A new instance of <see cref="IPseudonymInTransit"/>.</returns>
-    internal IPseudonymInTransit FromResponse(JObject response, BigInteger scalar)
+    internal IPseudonymInTransit FromResponse(JsonObject response, BigInteger scalar)
     {
         if (!IsAcceptableResponse(response))
         {
@@ -98,7 +98,7 @@ internal class PseudonymInTransitFactory : PointFactory, IPseudonymInTransitFact
             null);
     }
 
-    private bool IsAcceptableResponse(JObject? response)
+    private bool IsAcceptableResponse(JsonObject? response)
     {
         return response?["transitInfo"] != null;
     }

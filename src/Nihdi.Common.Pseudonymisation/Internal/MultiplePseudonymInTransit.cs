@@ -4,7 +4,7 @@
 
 namespace Nihdi.Common.Pseudonymisation.Internal;
 
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 using Nihdi.Common.Pseudonymisation.Exceptions;
 using Org.BouncyCastle.Math;
 
@@ -79,8 +79,8 @@ internal class MultiplePseudonymInTransit
         }
 
         var randoms = new List<BigInteger>(nbPseudonymsInTransit);
-        var payload = new JObject();
-        var inputs = new JArray();
+        var payload = new JsonObject();
+        var inputs = new JsonArray();
         payload.Add("inputs", inputs);
 
         for (int i = 0; i < nbPseudonymsInTransit; i++)
@@ -114,15 +114,14 @@ internal class MultiplePseudonymInTransit
             throw new InvalidOperationException("The target domain's key cannot be null");
         }
 
-        // JObject indents its output by default, which would make every request larger.
-        var body = payload.ToString(Newtonsoft.Json.Formatting.None);
+        var body = JsonHelper.ToCompactString(payload);
         return TimeLimit.WaitFor(Domain.PseudonymisationClient.ConvertMultipleTo(Domain.Key, toDomain.Key, body, cancellationToken), cancellationToken)
             .ContinueWith(rawResponse =>
             {
-                var response = JObject.Parse(rawResponse.GetAwaiter().GetResult());
+                var response = JsonHelper.Parse(rawResponse.GetAwaiter().GetResult());
                 var outputsToken = response["outputs"]
                     ?? throw new InvalidOperationException("The response does not contain an 'outputs' field.");
-                var outputs = (JArray)outputsToken;
+                var outputs = (JsonArray)outputsToken;
                 var pseudonymsInTransit = new MultiplePseudonymInTransit(toDomain);
                 var pseudonymInTransitFactory = (PseudonymInTransitFactory)toDomain.PseudonymInTransitFactory;
 
@@ -130,7 +129,7 @@ internal class MultiplePseudonymInTransit
                 {
                     try
                     {
-                        pseudonymsInTransit.Add(pseudonymInTransitFactory.FromResponse((JObject)outputs[i], randoms[i]));
+                        pseudonymsInTransit.Add(pseudonymInTransitFactory.FromResponse((JsonObject)outputs[i]!, randoms[i]));
                     }
                     catch (EHealthProblemException e)
                     {
@@ -195,8 +194,8 @@ internal class MultiplePseudonymInTransit
         }
 
         var randoms = new List<BigInteger>(nbPseudonymsInTransit);
-        var payload = new JObject();
-        var inputs = new JArray();
+        var payload = new JsonObject();
+        var inputs = new JsonArray();
 
         payload.Add("inputs", inputs);
         for (int i = 0; i < nbPseudonymsInTransit; i++)
@@ -220,20 +219,14 @@ internal class MultiplePseudonymInTransit
             throw new InvalidOperationException("The domain's key cannot be null");
         }
 
-        // JObject indents its output by default, which would make every request larger.
-        var body = payload.ToString(Newtonsoft.Json.Formatting.None);
+        var body = JsonHelper.ToCompactString(payload);
         return TimeLimit.WaitFor(Domain.PseudonymisationClient.IdentifyMultiple(Domain.Key, body, cancellationToken), cancellationToken)
             .ContinueWith(rawResponse =>
             {
-                var response = JObject.Parse(rawResponse.GetAwaiter().GetResult());
-                var jsonString = response?["outputs"]?.ToString();
-                if (jsonString == null)
-                {
-                    throw new InvalidOperationException("The raw response does" +
+                var response = JsonHelper.Parse(rawResponse.GetAwaiter().GetResult());
+                var outputs = response["outputs"] as JsonArray
+                    ?? throw new InvalidOperationException("The raw response does" +
                         "contain an `outputs` field");
-                }
-
-                var outputs = JArray.Parse(jsonString);
 
                 var values = new MultipleValue(Domain);
                 var pseudonymFactory = Domain.PseudonymFactory;
@@ -242,7 +235,7 @@ internal class MultiplePseudonymInTransit
                 {
                     try
                     {
-                        values.Add(pseudonymFactory.FromResponse((JObject)outputs[i], randoms[i]).AsValue());
+                        values.Add(pseudonymFactory.FromResponse((JsonObject)outputs[i]!, randoms[i]).AsValue());
                     }
                     catch (EHealthProblemException ex)
                     {

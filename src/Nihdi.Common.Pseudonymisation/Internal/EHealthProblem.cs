@@ -4,12 +4,12 @@
 
 namespace Nihdi.Common.Pseudonymisation.Internal;
 
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 
 /// <summary>
 /// Implementation of <see cref="IEHealthProblem"/> representing an eHealth problem.
 /// </summary>
-public class EHealthProblem : IEHealthProblem
+internal class EHealthProblem : IEHealthProblem
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="EHealthProblem"/> class.
@@ -55,18 +55,18 @@ public class EHealthProblem : IEHealthProblem
     /// </summary>
     /// <param name="response">The JSON response from the eHealth API.</param>
     /// <returns>An instance of <see cref="EHealthProblem"/>.</returns>
-    public static EHealthProblem FromResponse(JObject response)
+    public static EHealthProblem FromResponse(JsonObject response)
     {
         return response.ContainsKey("type")
             ? new EHealthProblem(
-                response.Value<string>("type") ?? string.Empty,
-                response.Value<string>("title") ?? string.Empty,
-                response.Value<string>("status") ?? string.Empty,
-                response.Value<string>("detail") ?? string.Empty)
+                response["type"]?.ToString() ?? string.Empty,
+                response["title"]?.ToString() ?? string.Empty,
+                response["status"]?.ToString() ?? string.Empty,
+                response["detail"]?.ToString() ?? string.Empty)
             : new EHealthProblem(
                 "urn:problem-type:ictreuse:pseudonymisation-helper:unexpected-result",
                 "Unexpected Result",
                 "undefined",
-                $"Unable to convert the response from eHealth into a EHealthProblem. Response was: \n{response.ToString(Newtonsoft.Json.Formatting.Indented)}");
+                $"Unable to convert the response from eHealth into a EHealthProblem. Response was: \n{JsonHelper.ToIndentedString(response)}");
     }
 }

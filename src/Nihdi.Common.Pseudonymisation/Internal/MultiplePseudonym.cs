@@ -4,7 +4,7 @@
 
 namespace Nihdi.Common.Pseudonymisation.Internal;
 
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 using Nihdi.Common.Pseudonymisation;
 using Nihdi.Common.Pseudonymisation.Exceptions;
 using Org.BouncyCastle.Math;
@@ -89,8 +89,8 @@ internal class MultiplePseudonym : MultiplePoint<IPseudonym>, IMultiplePseudonym
         }
 
         var randoms = new List<BigInteger>(nbPseudonyms);
-        var payload = new JObject();
-        var inputs = new JArray();
+        var payload = new JsonObject();
+        var inputs = new JsonArray();
         payload.Add("inputs", inputs);
         for (int i = 0; i < nbPseudonyms; i++)
         {
@@ -109,13 +109,12 @@ internal class MultiplePseudonym : MultiplePoint<IPseudonym>, IMultiplePseudonym
             throw new ArgumentNullException(nameof(toDomain.Key));
         }
 
-        // JObject indents its output by default, which would make every request larger.
-        var body = payload.ToString(Newtonsoft.Json.Formatting.None);
+        var body = JsonHelper.ToCompactString(payload);
         return TimeLimit.WaitFor(Domain.PseudonymisationClient.ConvertMultipleTo(Domain.Key, toDomain.Key, body, cancellationToken), cancellationToken)
             .ContinueWith(t =>
             {
-                var response = JObject.Parse(t.GetAwaiter().GetResult());
-                var outputs = response["outputs"] as JArray
+                var response = JsonHelper.Parse(t.GetAwaiter().GetResult());
+                var outputs = response["outputs"] as JsonArray
                     ?? throw new InvalidOperationException("outputs fields is null");
                 var pseudonymsInTransit = new MultiplePseudonymInTransit(toDomain);
                 var pseudonymInTransitFactory =
@@ -126,7 +125,7 @@ internal class MultiplePseudonym : MultiplePoint<IPseudonym>, IMultiplePseudonym
                     {
                         pseudonymsInTransit.Add(
                             pseudonymInTransitFactory.FromResponse(
-                                outputs[i] as JObject ?? throw new ArgumentNullException(string.Empty),
+                                outputs[i] as JsonObject ?? throw new ArgumentNullException(string.Empty),
                                 randoms[i]));
                     }
                     catch (EHealthProblemException ex)

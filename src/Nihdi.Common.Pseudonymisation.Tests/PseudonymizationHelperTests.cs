@@ -7,7 +7,6 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
 using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json.Linq;
 using Nihdi.Common.Pseudonymisation.Extensions;
 using Nihdi.Common.Pseudonymisation.Internal;
 

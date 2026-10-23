@@ -4,8 +4,8 @@
 
 namespace Nihdi.Common.Pseudonymisation.Internal;
 
+using System.Text.Json.Nodes;
 using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json.Linq;
 using Nihdi.Common.Pseudonymisation.Exceptions;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Math.EC;
@@ -145,7 +145,7 @@ internal class PseudonymFactory : PointFactory, IPseudonymFactory
     /// <returns>The unblinded pseudonym.</returns>
     internal Pseudonym FromRawResponse(string rawResponse, BigInteger scalar)
     {
-        return FromResponse(JObject.Parse(rawResponse), scalar);
+        return FromResponse(JsonHelper.Parse(rawResponse), scalar);
     }
 
     /// <summary>
@@ -155,7 +155,7 @@ internal class PseudonymFactory : PointFactory, IPseudonymFactory
     /// <param name="response">The JSON response object from eHealth.</param>
     /// <param name="scalar">The scalar used to unblind the pseudonym.</param>
     /// <returns>The unblinded pseudonym.</returns>
-    internal Pseudonym FromResponse(JObject response, BigInteger scalar)
+    internal Pseudonym FromResponse(JsonObject response, BigInteger scalar)
     {
         if (!IsAcceptableResponse(response))
         {
@@ -205,7 +205,7 @@ internal class PseudonymFactory : PointFactory, IPseudonymFactory
         return new Pseudonym(ecPoint, Domain);
     }
 
-    private bool IsAcceptableResponse(JObject response)
+    private bool IsAcceptableResponse(JsonObject response)
     {
         return response.ContainsKey("x") && response.ContainsKey("y");
     }

@@ -4,8 +4,8 @@
 
 namespace Nihdi.Common.Pseudonymisation.Internal;
 
+using System.Text.Json.Nodes;
 using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json.Linq;
 using Nihdi.Common.Pseudonymisation.Exceptions;
 using Org.BouncyCastle.Math;
 
@@ -86,8 +86,8 @@ internal class MultipleValue : MultiplePoint<IValue>, IMultipleValue
         }
 
         var randoms = new List<BigInteger>(nbValues);
-        var payload = new JObject();
-        var inputs = new JArray();
+        var payload = new JsonObject();
+        var inputs = new JsonArray();
         payload.Add("inputs", inputs);
         for (int i = 0; i < nbValues; i++)
         {
@@ -101,14 +101,13 @@ internal class MultipleValue : MultiplePoint<IValue>, IMultipleValue
             throw new InvalidOperationException("domain.PseudonymisationClient cannot be null");
         }
 
-        // JObject indents its output by default, which would make every request larger.
-        var body = payload.ToString(Newtonsoft.Json.Formatting.None);
+        var body = JsonHelper.ToCompactString(payload);
 
         return TimeLimit.WaitFor(this.Domain.PseudonymisationClient.PseudonymizeMultiple(this.Domain.Key!, body, cancellationToken), cancellationToken)
             .ContinueWith(rawResponse =>
             {
-                var response = JObject.Parse(rawResponse.GetAwaiter().GetResult());
-                var outputs = response["outputs"] as JArray
+                var response = JsonHelper.Parse(rawResponse.GetAwaiter().GetResult());
+                var outputs = response["outputs"] as JsonArray
                     ?? throw new InvalidOperationException("outputs fields is null");
                 var pseudonymsInTransit = new MultiplePseudonymInTransit(this.Domain);
                 var pseudonymInTransitFactory = this.Domain.PseudonymInTransitFactory;
@@ -118,7 +117,7 @@ internal class MultipleValue : MultiplePoint<IValue>, IMultipleValue
                     {
                         pseudonymsInTransit.Add(
                             pseudonymInTransitFactory.FromResponse(
-                                outputs[i] as JObject ?? throw new ArgumentNullException(string.Empty),
+                                outputs[i] as JsonObject ?? throw new ArgumentNullException(string.Empty),
                                 randoms[i]));
                     }
                     catch (EHealthProblemException ex)

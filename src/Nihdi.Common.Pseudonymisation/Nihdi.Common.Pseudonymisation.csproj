@@ -53,7 +53,6 @@
 		<PackageReference Include="BouncyCastle.Cryptography" Version="2.4.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
 		<PackageReference Include="Microsoft.IdentityModel.Tokens" Version="7.6.2" />
-		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 	</ItemGroup>
 
 	<!-- Polyfills for .NET Framework: these APIs ship in-box on net8.0 and net10.0. -->

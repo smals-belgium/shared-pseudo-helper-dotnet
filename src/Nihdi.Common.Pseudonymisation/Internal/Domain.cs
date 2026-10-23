@@ -4,8 +4,8 @@
 
 namespace Nihdi.Common.Pseudonymisation.Internal;
 
+using System.Text.Json.Nodes;
 using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json.Linq;
 using Nihdi.Common.Pseudonymisation.Jose;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Math.EC;
@@ -197,8 +197,7 @@ internal class Domain : IDomain
     /// <returns>A JSON string representation of the pseudonym payload.</returns>
     internal string CreatePayloadString(IPseudonym pseudonym)
     {
-        // JObject indents its output by default, which would make every request larger.
-        return CreatePayload(pseudonym, null).ToString(Newtonsoft.Json.Formatting.None);
+        return JsonHelper.ToCompactString(CreatePayload(pseudonym, null));
     }
 
     /// <summary>
@@ -209,8 +208,7 @@ internal class Domain : IDomain
     /// <returns>A JSON string representation of the pseudonym payload.</returns>
     internal string CreatePayloadString(IPseudonym pseudonym, string? transitInfo)
     {
-        // JObject indents its output by default, which would make every request larger.
-        return CreatePayload(pseudonym, transitInfo).ToString(Newtonsoft.Json.Formatting.None);
+        return JsonHelper.ToCompactString(CreatePayload(pseudonym, transitInfo));
     }
 
     /// <summary>
@@ -218,7 +216,7 @@ internal class Domain : IDomain
     /// </summary>
     /// <param name="pseudonym">The pseudonym to create a payload from.</param>
     /// <returns>The pseudonym payload, as a JSON object.</returns>
-    internal JObject CreatePayload(IPseudonym pseudonym)
+    internal JsonObject CreatePayload(IPseudonym pseudonym)
     {
         if (pseudonym is IPseudonymInTransit pseudonymInTransit)
         {
@@ -234,19 +232,19 @@ internal class Domain : IDomain
     /// <param name="pseudonym">The pseudonym to create a payload from.</param>
     /// <param name="transitInfo">The transit information to include in the payload, or null if none.</param>
     /// <returns>The pseudonym payload, as a JSON object.</returns>
-    internal JObject CreatePayload(IPseudonym pseudonym, string? transitInfo)
+    internal JsonObject CreatePayload(IPseudonym pseudonym, string? transitInfo)
     {
-        var payload = new JObject
+        var payload = new JsonObject
         {
-            { "id", JToken.FromObject(Guid.NewGuid()) },
-            { "crv", JToken.FromObject(Crv ?? throw new InvalidOperationException("`crv` field cannot be null.")) },
-            { "x", JToken.FromObject(pseudonym.X()) },
-            { "y", JToken.FromObject(pseudonym.Y()) },
+            { "id", Guid.NewGuid().ToString() },
+            { "crv", Crv ?? throw new InvalidOperationException("`crv` field cannot be null.") },
+            { "x", pseudonym.X() },
+            { "y", pseudonym.Y() },
         };
 
         if (transitInfo != null)
         {
-            payload.Add("transitInfo", JToken.FromObject(transitInfo));
+            payload.Add("transitInfo", transitInfo);
         }
 
         return payload;

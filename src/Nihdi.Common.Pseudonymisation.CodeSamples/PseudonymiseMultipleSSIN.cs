@@ -46,7 +46,7 @@ public class PseudonymiseMultipleSSIN
             }
             catch (EHealthProblemException e)
             {
-                EHealthProblem problem = e.Problem;
+                IEHealthProblem problem = e.Problem;
                 // Add your implementation here
             }
         }
