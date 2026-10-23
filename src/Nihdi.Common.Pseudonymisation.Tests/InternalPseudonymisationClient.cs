@@ -10,13 +10,13 @@ using Nihdi.Common.Pseudonymisation;
 internal class InternalPseudonymisationClient : IPseudonymisationClient
 {
     private readonly PseudonymisationHelper? _internalPseudonymisationHelper;
-    private readonly IDateTimeService _dateTimeService;
+    private readonly TimeProvider _timeProvider;
     private readonly string _domainJson;
 
-    public InternalPseudonymisationClient(PseudonymisationHelper? pseudonymisationHelper, IDateTimeService? dateTimeService = null, string? domainJson = null)
+    public InternalPseudonymisationClient(PseudonymisationHelper? pseudonymisationHelper, TimeProvider? timeProvider = null, string? domainJson = null)
     {
         _internalPseudonymisationHelper = pseudonymisationHelper;
-        this._dateTimeService = dateTimeService ?? new DateTimeService();
+        this._timeProvider = timeProvider ?? TimeProvider.System;
         this._domainJson = domainJson ?? string.Empty;
     }
 
@@ -37,7 +37,7 @@ internal class InternalPseudonymisationClient : IPseudonymisationClient
 
     public async Task<string> Identify(string domainKey, string payload, CancellationToken cancellationToken)
     {
-        var now = _dateTimeService.Now;
+        var now = _timeProvider.GetUtcNow();
         var jsonObject = JObject.Parse(payload);
 
         return await _internalPseudonymisationHelper!
@@ -65,7 +65,7 @@ internal class InternalPseudonymisationClient : IPseudonymisationClient
 
     public Task<string> IdentifyMultiple(string domainKey, string payload, CancellationToken cancellationToken)
     {
-        var now = _dateTimeService.Now;
+        var now = _timeProvider.GetUtcNow();
         var jsonObject = JObject.Parse(payload);
         var inputs = jsonObject["inputs"] as JArray;
 
@@ -117,7 +117,7 @@ internal class InternalPseudonymisationClient : IPseudonymisationClient
 
     public async Task<string> Pseudonymize(string domainKey, string payload, CancellationToken cancellationToken)
     {
-        var now = _dateTimeService.Now;
+        var now = _timeProvider.GetUtcNow();
         var jsonObject = JObject.Parse(payload);
 
         if (_internalPseudonymisationHelper == null)
@@ -149,7 +149,7 @@ internal class InternalPseudonymisationClient : IPseudonymisationClient
 
     public Task<string> PseudonymizeMultiple(string domainKey, string payload, CancellationToken cancellationToken)
     {
-        var now = _dateTimeService.Now;
+        var now = _timeProvider.GetUtcNow();
         var jsonObject = JObject.Parse(payload);
         var inputs = jsonObject["inputs"] as JArray;
 

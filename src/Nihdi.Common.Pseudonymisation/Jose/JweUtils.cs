@@ -7,7 +7,6 @@ namespace Nihdi.Common.Pseudonymisation.Jose;
 using System.Text;
 using System.Text.Json;
 using Microsoft.IdentityModel.Tokens;
-using Nihdi.Common.Pseudonymisation.Utils;
 
 /// <summary>
 /// Utility class for converting between JWE compact and flattened JSON formats.

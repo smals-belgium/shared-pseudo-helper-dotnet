@@ -6,7 +6,6 @@ namespace Nihdi.Common.Pseudonymisation.Internal;
 
 using Microsoft.IdentityModel.Tokens;
 using Nihdi.Common.Pseudonymisation;
-using Nihdi.Common.Pseudonymisation.Utils;
 using Org.BouncyCastle.Math;
 
 /// <inheritdoc/>

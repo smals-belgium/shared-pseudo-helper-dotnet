@@ -9,16 +9,14 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.IdentityModel.Tokens;
 using Nihdi.Common.Pseudonymisation.Exceptions;
-using Nihdi.Common.Pseudonymisation.Extensions;
 using Nihdi.Common.Pseudonymisation.Jose;
-using Nihdi.Common.Pseudonymisation.Utils;
 using Org.BouncyCastle.Math;
 
 /// <inheritdoc/>
 internal class TransitInfo : ITransitInfo
 {
     private readonly TimeSpan _clockSkew = TimeSpan.FromMinutes(1); // as per ehealth spec
-    private readonly IDateTimeService _dateTimeService;
+    private readonly TimeProvider _timeProvider;
     private readonly Domain _domain;
     private string? _raw;
     private JsonElement _parsed;
@@ -28,12 +26,12 @@ internal class TransitInfo : ITransitInfo
     /// </summary>
     /// <param name="domain">A <see cref="Domain"/> instance.</param>
     /// <param name="raw">A raw JSON string representing the transit information.</param>
-    /// <param name="dateTimeService">A <see cref="IDateTimeService"/> instance.</param>
-    public TransitInfo(Domain domain, string? raw, IDateTimeService? dateTimeService = null)
+    /// <param name="timeProvider">The clock used to read and stamp the issue and expiry times, or null for the system clock.</param>
+    public TransitInfo(Domain domain, string? raw, TimeProvider? timeProvider = null)
     {
         this._domain = domain;
         this._raw = raw;
-        this._dateTimeService = dateTimeService ?? new DateTimeService();
+        this._timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     /// <summary>
@@ -42,19 +40,19 @@ internal class TransitInfo : ITransitInfo
     /// <param name="domain">A <see cref="Domain"/> instance.</param>
     /// <param name="scalar">A <see cref="BigInteger"/> instance representing the scalar value.</param>
     /// <param name="customizer">A <see cref="ITransitInfoCustomizer"/> instance.</param>
-    /// <param name="dateTimeService">A <see cref="IDateTimeService"/> instance.</param>
+    /// <param name="timeProvider">The clock used to read and stamp the issue and expiry times, or null for the system clock.</param>
     public TransitInfo(
         Domain domain,
         BigInteger scalar,
         ITransitInfoCustomizer customizer,
-        IDateTimeService? dateTimeService = null)
+        TimeProvider? timeProvider = null)
     {
         if (domain.ActiveKeyEncryptionMethod == null)
         {
             throw new ArgumentException($"The domain {nameof(domain.ActiveKeyEncryptionMethod)} property cannot be null.");
         }
 
-        this._dateTimeService = dateTimeService ?? new DateTimeService();
+        this._timeProvider = timeProvider ?? TimeProvider.System;
 
         if (domain == null)
         {
@@ -291,14 +289,14 @@ internal class TransitInfo : ITransitInfo
         long iat = Convert.ToInt64(iatValue);
 
         var exp = (long)(payload?["exp"] ?? throw new InvalidOperationException());
-        var currentTime = _dateTimeService.UtcNow;
+        var currentTime = _timeProvider.GetUtcNow();
 
-        if (currentTime.Add(_clockSkew).IsBefore(DateTimeHelper.FromEpochSecondsToDateTime(iat)))
+        if (currentTime.Add(_clockSkew) < DateTimeOffset.FromUnixTimeSeconds(iat))
         {
             throw new InvalidTransitInfoException("transifInfo not yet ready for use (iat > now)");
         }
 
-        if (currentTime.Add(-_clockSkew).IsAfter(DateTimeHelper.FromEpochSecondsToDateTime(exp)))
+        if (currentTime.Add(-_clockSkew) > DateTimeOffset.FromUnixTimeSeconds(exp))
         {
             throw new InvalidTransitInfoException("expired transifInfo (now > exp)");
         }
@@ -392,7 +390,7 @@ internal class TransitInfo : ITransitInfo
         }
 
         var inTransitTtl = domain.InTransitTtl;
-        var currentTime = _dateTimeService.UtcNow;
+        var currentTime = _timeProvider.GetUtcNow();
 
         var payload = new TransitPayload
         {
