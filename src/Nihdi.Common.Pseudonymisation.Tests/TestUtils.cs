@@ -6,7 +6,7 @@ namespace Nihdi.Common.Pseudonymisation.Tests;
 
 using Nihdi.Common.Pseudonymisation.Internal;
 
-public class TestUtils
+internal class TestUtils
 {
     public static Domain CreateTestDomain(string key, int bufferSize)
     {

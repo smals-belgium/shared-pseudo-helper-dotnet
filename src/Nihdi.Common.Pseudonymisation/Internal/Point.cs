@@ -9,7 +9,7 @@ using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Math.EC;
 
 /// <inheritdoc/>
-public abstract class Point : IPoint
+internal abstract class Point : IPoint
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="Point"/> class.

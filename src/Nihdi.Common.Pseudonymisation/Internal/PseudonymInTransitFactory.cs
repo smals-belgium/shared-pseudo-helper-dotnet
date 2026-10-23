@@ -18,7 +18,7 @@ using Org.BouncyCastle.Math;
 /// A pseudonym in transit represents a pseudonym with associated transit information,
 /// typically used during the transmission of pseudonymized data between systems.
 /// </remarks>
-public class PseudonymInTransitFactory : PointFactory, IPseudonymInTransitFactory
+internal class PseudonymInTransitFactory : PointFactory, IPseudonymInTransitFactory
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="PseudonymInTransitFactory"/> class.

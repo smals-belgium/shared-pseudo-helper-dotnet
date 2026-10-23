@@ -15,7 +15,7 @@ using Nihdi.Common.Pseudonymisation.Utils;
 using Org.BouncyCastle.Math;
 
 /// <inheritdoc/>
-public class TransitInfo : ITransitInfo
+internal class TransitInfo : ITransitInfo
 {
     private readonly TimeSpan _clockSkew = TimeSpan.FromMinutes(1); // as per ehealth spec
     private readonly IDateTimeService _dateTimeService;

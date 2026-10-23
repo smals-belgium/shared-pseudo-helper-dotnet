@@ -12,7 +12,7 @@ using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Math.EC;
 
 /// <inheritdoc/>
-public class ValueFactory : PointFactory, IValueFactory
+internal class ValueFactory : PointFactory, IValueFactory
 {
     private readonly int _maxValueSize;
 

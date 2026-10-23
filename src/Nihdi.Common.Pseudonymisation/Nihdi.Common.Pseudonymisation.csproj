@@ -20,6 +20,11 @@
 		<PackageTags></PackageTags>
 	</PropertyGroup>
 
+	<!-- The build server signs with a key file passed on the command line; InternalsVisibleTo.cs needs to know. -->
+	<PropertyGroup Condition="'$(AssemblyOriginatorKeyFile)' != ''">
+		<DefineConstants>$(DefineConstants);SIGNED</DefineConstants>
+	</PropertyGroup>
+
 	<PropertyGroup>
 		<Authors>RIZIV-INAMI</Authors>
 		<Description>A .NET library that helps integrators interact with the eHealth Pseudonymisation service.</Description>

@@ -10,7 +10,7 @@ using Nihdi.Common.Pseudonymisation.Exceptions;
 using Org.BouncyCastle.Math;
 
 /// <inheritdoc/>
-public class MultiplePseudonym : MultiplePoint<IPseudonym>, IMultiplePseudonym
+internal class MultiplePseudonym : MultiplePoint<IPseudonym>, IMultiplePseudonym
 {
     /// <inheritdoc/>
     public MultiplePseudonym(IDomain domain)

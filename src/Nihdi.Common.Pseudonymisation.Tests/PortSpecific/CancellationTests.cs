@@ -134,8 +134,9 @@ public class CancellationTests
     [DynamicData(nameof(OperationsOfOneCaller), DynamicDataSourceType.Method)]
     public void Operation_WhenTheCallerCancels_StopsAndTellsTheClient(
         string name,
-        Func<Domain, Domain, CancellationToken, Task> start)
+        object startOperation)
     {
+        var start = (Func<Domain, Domain, CancellationToken, Task>)startOperation;
         var client = new TokenObservingClient();
         using var caller = new CancellationTokenSource();
 
@@ -154,8 +155,9 @@ public class CancellationTests
     [DynamicData(nameof(OperationsOfOneCaller), DynamicDataSourceType.Method)]
     public void Operation_WhenTheTokenIsAlreadyCancelled_TheClientKnowsFromTheStart(
         string name,
-        Func<Domain, Domain, CancellationToken, Task> start)
+        object startOperation)
     {
+        var start = (Func<Domain, Domain, CancellationToken, Task>)startOperation;
         var client = new TokenObservingClient();
 
         var operation = start(CreateDomain(_domainKey, client), CreateDomain(_targetDomainKey, client), new CancellationToken(true));
@@ -170,8 +172,9 @@ public class CancellationTests
     [DynamicData(nameof(OperationsOfOneCaller), DynamicDataSourceType.Method)]
     public void Operation_WhenTheClientIgnoresTheToken_TheCallerStillStopsWaiting(
         string name,
-        Func<Domain, Domain, CancellationToken, Task> start)
+        object startOperation)
     {
+        var start = (Func<Domain, Domain, CancellationToken, Task>)startOperation;
         var client = new TokenObservingClient(honoursTheToken: false);
         using var caller = new CancellationTokenSource();
 

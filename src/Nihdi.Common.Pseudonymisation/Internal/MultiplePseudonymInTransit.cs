@@ -11,7 +11,7 @@ using Org.BouncyCastle.Math;
 /// <summary>
 /// Collection of <see cref="IPseudonymInTransit"/>s, all belonging to the same.
 /// </summary>
-public class MultiplePseudonymInTransit
+internal class MultiplePseudonymInTransit
     : MultiplePoint<IPseudonymInTransit>, IMultiplePseudonymInTransit
 {
     /// <summary>

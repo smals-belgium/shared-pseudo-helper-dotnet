@@ -12,7 +12,7 @@ using Org.BouncyCastle.Math.EC;
 using Org.BouncyCastle.Security;
 
 /// <inheritdoc/>
-public class Domain : IDomain
+internal class Domain : IDomain
 {
     private readonly ValueFactory _valueFactory;
     private readonly PseudonymFactory _pseudonymFactory;
