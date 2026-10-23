@@ -76,6 +76,10 @@ internal static class TimeLimit
     /// <returns>The shared task itself when the token cannot be cancelled, otherwise a task that ends with this caller's cancellation.</returns>
     internal static Task<T> WaitFor<T>(Task<T> shared, CancellationToken callerToken)
     {
+        // The clock is never read here: the timeout is infinite, so no timer is ever created. It is
+        // passed only because this overload asks for one, and this overload is the only WaitAsync
+        // available on net48, where it comes from Microsoft.Bcl.TimeProvider as an extension method.
+        // Nothing to inject, therefore: this call measures no time.
         return shared.WaitAsync(Timeout.InfiniteTimeSpan, TimeProvider.System, callerToken);
     }
 

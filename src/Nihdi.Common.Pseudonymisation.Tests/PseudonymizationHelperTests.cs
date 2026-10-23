@@ -17,7 +17,7 @@ namespace Nihdi.Common.Pseudonymisation.Tests;
 [TestClass]
 public class PseudonymisationHelperTest
 {
-    private static readonly IDateTimeService _dateTimeService = new DateTimeService();
+    private static readonly TimeProvider _timeProvider = TimeProvider.System;
     private static readonly Dictionary<string, RSA> _generatedRsaKeys = new Dictionary<string, RSA>();
     private static readonly Dictionary<string, string> _generatedCertificates = new Dictionary<string, string>();
     private static readonly Dictionary<string, string> _privateJwksByHash = new Dictionary<string, string>();
@@ -85,7 +85,7 @@ public class PseudonymisationHelperTest
                                   .JwksUrl(new Uri("https://api-acpt.ehealth.fgov.be/etee/v1/pubKeys/cacerts/jwks?identifier=0406798006&type=CBE&applicationIdentifier=UHMEP&use=enc"))
                                   .JwkSupplier(jwksSupplier)
                                   .PrivateKeySupplier(privateKeySupplier)
-                                  .PseudonymisationClient(new PseudonymisationClient(_dateTimeService, _dynamicDomainJson))
+                                  .PseudonymisationClient(new PseudonymisationClient(_timeProvider, _dynamicDomainJson))
                                   .Build();
 
         _pseudonymisationHelper =
@@ -93,7 +93,7 @@ public class PseudonymisationHelperTest
                                 // .JwksUrl(new Uri("https://api-acpt.ehealth.fgov.be/etee/v1/pubKeys/cacerts/jwks?identifier=0406798006&type=CBE&applicationIdentifier=UHMEP&use=enc"))
                                 // .JwkSupplier(jwksSupplier)
                                 // .PrivateKeySupplier(privateKeySupplier)
-                                  .PseudonymisationClient(new InternalPseudonymisationClient(internalPseudonymisationHelper, _dateTimeService, _dynamicDomainJson))
+                                  .PseudonymisationClient(new InternalPseudonymisationClient(internalPseudonymisationHelper, _timeProvider, _dynamicDomainJson))
                                   .Build();
     }
 
@@ -201,9 +201,10 @@ public class PseudonymisationHelperTest
         request.CertificateExtensions.Add(
             new X509KeyUsageExtension(X509KeyUsageFlags.DataEncipherment, false));
 
+        var now = _timeProvider.GetUtcNow();
         var certificate = request.CreateSelfSigned(
-            DateTimeOffset.Now,
-            DateTimeOffset.Now.AddYears(3));
+            now,
+            now.AddYears(3));
 
         return certificate;
     }
@@ -229,6 +230,7 @@ public class PseudonymisationHelperTest
     private static string CreatePrivateJwk(RSA rsa, string kid)
     {
         var parameters = rsa.ExportParameters(true);
+        var now = _timeProvider.GetUtcNow();
         var certBase64 = _generatedCertificates[kid];
         var x5tS256Hash = ComputeX5tS256(certBase64);
 
@@ -248,8 +250,8 @@ public class PseudonymisationHelperTest
             ["qi"] = Base64UrlEncoder.Encode(parameters.InverseQ),
             ["x5c"] = new[] { certBase64 },
             ["x5t#S256"] = x5tS256Hash, // This will be properly serialized with the # character
-            ["nbf"] = DateTimeOffset.Now.ToUnixTimeSeconds(),
-            ["exp"] = DateTimeOffset.Now.AddYears(2).ToUnixTimeSeconds()
+            ["nbf"] = now.ToUnixTimeSeconds(),
+            ["exp"] = now.AddYears(2).ToUnixTimeSeconds()
         };
 
         var options = new JsonSerializerOptions { WriteIndented = true };

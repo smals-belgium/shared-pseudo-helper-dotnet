@@ -18,7 +18,7 @@ using Org.BouncyCastle.Math;
 internal class TransitInfo : ITransitInfo
 {
     private readonly TimeSpan _clockSkew = TimeSpan.FromMinutes(1); // as per ehealth spec
-    private readonly IDateTimeService _dateTimeService;
+    private readonly TimeProvider _timeProvider;
     private readonly Domain _domain;
     private string? _raw;
     private JsonElement _parsed;
@@ -28,12 +28,12 @@ internal class TransitInfo : ITransitInfo
     /// </summary>
     /// <param name="domain">A <see cref="Domain"/> instance.</param>
     /// <param name="raw">A raw JSON string representing the transit information.</param>
-    /// <param name="dateTimeService">A <see cref="IDateTimeService"/> instance.</param>
-    public TransitInfo(Domain domain, string? raw, IDateTimeService? dateTimeService = null)
+    /// <param name="timeProvider">The clock used to read and stamp the issue and expiry times, or null for the system clock.</param>
+    public TransitInfo(Domain domain, string? raw, TimeProvider? timeProvider = null)
     {
         this._domain = domain;
         this._raw = raw;
-        this._dateTimeService = dateTimeService ?? new DateTimeService();
+        this._timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     /// <summary>
@@ -42,19 +42,19 @@ internal class TransitInfo : ITransitInfo
     /// <param name="domain">A <see cref="Domain"/> instance.</param>
     /// <param name="scalar">A <see cref="BigInteger"/> instance representing the scalar value.</param>
     /// <param name="customizer">A <see cref="ITransitInfoCustomizer"/> instance.</param>
-    /// <param name="dateTimeService">A <see cref="IDateTimeService"/> instance.</param>
+    /// <param name="timeProvider">The clock used to read and stamp the issue and expiry times, or null for the system clock.</param>
     public TransitInfo(
         Domain domain,
         BigInteger scalar,
         ITransitInfoCustomizer customizer,
-        IDateTimeService? dateTimeService = null)
+        TimeProvider? timeProvider = null)
     {
         if (domain.ActiveKeyEncryptionMethod == null)
         {
             throw new ArgumentException($"The domain {nameof(domain.ActiveKeyEncryptionMethod)} property cannot be null.");
         }
 
-        this._dateTimeService = dateTimeService ?? new DateTimeService();
+        this._timeProvider = timeProvider ?? TimeProvider.System;
 
         if (domain == null)
         {
@@ -291,7 +291,7 @@ internal class TransitInfo : ITransitInfo
         long iat = Convert.ToInt64(iatValue);
 
         var exp = (long)(payload?["exp"] ?? throw new InvalidOperationException());
-        var currentTime = _dateTimeService.UtcNow;
+        var currentTime = _timeProvider.GetUtcNow().UtcDateTime;
 
         if (currentTime.Add(_clockSkew).IsBefore(DateTimeHelper.FromEpochSecondsToDateTime(iat)))
         {
@@ -392,7 +392,7 @@ internal class TransitInfo : ITransitInfo
         }
 
         var inTransitTtl = domain.InTransitTtl;
-        var currentTime = _dateTimeService.UtcNow;
+        var currentTime = _timeProvider.GetUtcNow().UtcDateTime;
 
         var payload = new TransitPayload
         {

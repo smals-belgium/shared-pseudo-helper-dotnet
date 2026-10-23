@@ -6,12 +6,12 @@ namespace Nihdi.Common.Pseudonymisation.Tests;
 
 internal class PseudonymisationClient : IPseudonymisationClient
 {
-    private readonly IDateTimeService _dateTimeService;
+    private readonly TimeProvider _timeProvider;
     private readonly string _domainJson;
 
-    public PseudonymisationClient(IDateTimeService? dateTimeService = null, string? domainJson = null)
+    public PseudonymisationClient(TimeProvider? timeProvider = null, string? domainJson = null)
     {
-        this._dateTimeService = dateTimeService ?? new DateTimeService();
+        this._timeProvider = timeProvider ?? TimeProvider.System;
         this._domainJson = domainJson ?? string.Empty;
     }
 
