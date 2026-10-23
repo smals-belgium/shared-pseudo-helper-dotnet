@@ -10,7 +10,6 @@ using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json.Linq;
 using Nihdi.Common.Pseudonymisation.Extensions;
 using Nihdi.Common.Pseudonymisation.Internal;
-using Nihdi.Common.Pseudonymisation.Utils;
 
 namespace Nihdi.Common.Pseudonymisation.Tests;
 

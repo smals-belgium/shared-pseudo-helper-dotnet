@@ -9,9 +9,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.IdentityModel.Tokens;
 using Nihdi.Common.Pseudonymisation.Exceptions;
-using Nihdi.Common.Pseudonymisation.Extensions;
 using Nihdi.Common.Pseudonymisation.Jose;
-using Nihdi.Common.Pseudonymisation.Utils;
 using Org.BouncyCastle.Math;
 
 /// <inheritdoc/>
@@ -291,14 +289,14 @@ internal class TransitInfo : ITransitInfo
         long iat = Convert.ToInt64(iatValue);
 
         var exp = (long)(payload?["exp"] ?? throw new InvalidOperationException());
-        var currentTime = _timeProvider.GetUtcNow().UtcDateTime;
+        var currentTime = _timeProvider.GetUtcNow();
 
-        if (currentTime.Add(_clockSkew).IsBefore(DateTimeHelper.FromEpochSecondsToDateTime(iat)))
+        if (currentTime.Add(_clockSkew) < DateTimeOffset.FromUnixTimeSeconds(iat))
         {
             throw new InvalidTransitInfoException("transifInfo not yet ready for use (iat > now)");
         }
 
-        if (currentTime.Add(-_clockSkew).IsAfter(DateTimeHelper.FromEpochSecondsToDateTime(exp)))
+        if (currentTime.Add(-_clockSkew) > DateTimeOffset.FromUnixTimeSeconds(exp))
         {
             throw new InvalidTransitInfoException("expired transifInfo (now > exp)");
         }
@@ -392,7 +390,7 @@ internal class TransitInfo : ITransitInfo
         }
 
         var inTransitTtl = domain.InTransitTtl;
-        var currentTime = _timeProvider.GetUtcNow().UtcDateTime;
+        var currentTime = _timeProvider.GetUtcNow();
 
         var payload = new TransitPayload
         {
