@@ -53,17 +53,17 @@ public class JweRecipientHeader
 
         if (!string.IsNullOrEmpty(Alg))
         {
-            dict["alg"] = Alg;
+            dict["alg"] = Alg!;
         }
 
         if (!string.IsNullOrEmpty(Jku))
         {
-            dict["jku"] = Jku;
+            dict["jku"] = Jku!;
         }
 
         if (!string.IsNullOrEmpty(Kid))
         {
-            dict["kid"] = Kid;
+            dict["kid"] = Kid!;
         }
 
         return dict;
