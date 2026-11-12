@@ -64,9 +64,38 @@ internal class EHealthProblem : IEHealthProblem
                 response["status"]?.ToString() ?? string.Empty,
                 response["detail"]?.ToString() ?? string.Empty)
             : new EHealthProblem(
-                "urn:problem-type:ictreuse:pseudonymisation-helper:unexpected-result",
+                "urn:problem-type:smals:pseudo-helper:unexpected-result",
                 "Unexpected Result",
                 "undefined",
                 $"Unable to convert the response from eHealth into a EHealthProblem. Response was: \n{JsonHelper.ToIndentedString(response)}");
+    }
+
+    /// <summary>
+    /// Creates an <see cref="EHealthProblem"/> instance for a response that is valid JSON, but not
+    /// an object (an array, `null`, a number...).
+    /// </summary>
+    /// <param name="rawResponse">The raw response, quoted as it was received.</param>
+    /// <returns>An instance of <see cref="EHealthProblem"/>.</returns>
+    public static EHealthProblem FromUnexpectedRawResponse(string rawResponse)
+    {
+        return new EHealthProblem(
+            "urn:problem-type:smals:pseudo-helper:unexpected-result",
+            "Unexpected Result",
+            "undefined",
+            $"Unable to convert the response from eHealth into a EHealthProblem. Response was: \n{rawResponse}");
+    }
+
+    /// <summary>
+    /// Creates an <see cref="EHealthProblem"/> instance for a response that cannot be read as JSON.
+    /// </summary>
+    /// <param name="rawResponse">The raw response, quoted as it was received.</param>
+    /// <returns>An instance of <see cref="EHealthProblem"/>.</returns>
+    public static EHealthProblem FromUnparseableRawResponse(string rawResponse)
+    {
+        return new EHealthProblem(
+            "urn:problem-type:smals:pseudo-helper:unparseable-result",
+            "Unparseable Result",
+            "undefined",
+            $"Unable to parse the response from eHealth. Response was: \n{rawResponse}");
     }
 }
