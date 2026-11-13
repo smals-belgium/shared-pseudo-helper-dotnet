@@ -115,7 +115,7 @@ internal class MultiplePseudonym : MultiplePoint<IPseudonym>, IMultiplePseudonym
             {
                 var response = JsonHelper.Parse(t.GetAwaiter().GetResult());
                 var outputs = response["outputs"] as JsonArray
-                    ?? throw new InvalidOperationException("outputs fields is null");
+                    ?? throw new EHealthProblemException(EHealthProblem.FromResponse(response));
                 var pseudonymsInTransit = new MultiplePseudonymInTransit(toDomain);
                 var pseudonymInTransitFactory =
                     (PseudonymInTransitFactory)toDomain.PseudonymInTransitFactory;
