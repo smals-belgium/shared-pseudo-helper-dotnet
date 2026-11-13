@@ -108,7 +108,7 @@ internal class MultipleValue : MultiplePoint<IValue>, IMultipleValue
             {
                 var response = JsonHelper.Parse(rawResponse.GetAwaiter().GetResult());
                 var outputs = response["outputs"] as JsonArray
-                    ?? throw new InvalidOperationException("outputs fields is null");
+                    ?? throw new EHealthProblemException(EHealthProblem.FromResponse(response));
                 var pseudonymsInTransit = new MultiplePseudonymInTransit(this.Domain);
                 var pseudonymInTransitFactory = this.Domain.PseudonymInTransitFactory;
                 for (int i = 0; i < nbValues; i++)

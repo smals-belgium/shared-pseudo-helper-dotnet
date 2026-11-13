@@ -265,7 +265,7 @@ Methods of IPseudonymizationClient
     Task<string> ConvertTo(string fromDomainKey, string toDomainKey, string payload, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Call to /pseudo/v1/domains/{fromDomainKey}/convertToMultiple/{toDomainKey}
+    /// Call to /pseudo/v1/domains/{fromDomainKey}/convertMultipleTo/{toDomainKey}
     /// with the given payload and return the response as a String.
     /// </summary>
     /// <param name="fromDomainKey">The domain of the pseudonym to convert.</param>

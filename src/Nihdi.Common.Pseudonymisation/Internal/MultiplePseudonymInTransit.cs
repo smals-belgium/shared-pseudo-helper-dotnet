@@ -119,9 +119,8 @@ internal class MultiplePseudonymInTransit
             .ContinueWith(rawResponse =>
             {
                 var response = JsonHelper.Parse(rawResponse.GetAwaiter().GetResult());
-                var outputsToken = response["outputs"]
-                    ?? throw new InvalidOperationException("The response does not contain an 'outputs' field.");
-                var outputs = (JsonArray)outputsToken;
+                var outputs = response["outputs"] as JsonArray
+                    ?? throw new EHealthProblemException(EHealthProblem.FromResponse(response));
                 var pseudonymsInTransit = new MultiplePseudonymInTransit(toDomain);
                 var pseudonymInTransitFactory = (PseudonymInTransitFactory)toDomain.PseudonymInTransitFactory;
 
@@ -225,8 +224,7 @@ internal class MultiplePseudonymInTransit
             {
                 var response = JsonHelper.Parse(rawResponse.GetAwaiter().GetResult());
                 var outputs = response["outputs"] as JsonArray
-                    ?? throw new InvalidOperationException("The raw response does" +
-                        "contain an `outputs` field");
+                    ?? throw new EHealthProblemException(EHealthProblem.FromResponse(response));
 
                 var values = new MultipleValue(Domain);
                 var pseudonymFactory = Domain.PseudonymFactory;
