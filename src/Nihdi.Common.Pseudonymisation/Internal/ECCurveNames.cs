@@ -10,7 +10,7 @@ using Org.BouncyCastle.Math.EC;
 /// <summary>
 /// Helper class for handling ECCurve names and retrieval.
 /// </summary>
-public static class EcCurveNames
+internal static class EcCurveNames
 {
     /// <summary>
     /// Gets the ECCurve instance corresponding to the given curve name.
