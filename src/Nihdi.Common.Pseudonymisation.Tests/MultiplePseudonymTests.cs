@@ -2,7 +2,6 @@
 // Copyright (c) Riziv-Inami. All rights reserved.
 // </copyright>
 
-using FluentAssertions;
 using Nihdi.Common.Pseudonymisation.Internal;
 
 namespace Nihdi.Common.Pseudonymisation.Tests;
@@ -43,8 +42,7 @@ public class MultiplePseudonymTests
 
         Assert.AreEqual(10, multiple.Size());
 
-        var action = () => multiple.Add(pseudonym);
-        action.Should().Throw<ArgumentOutOfRangeException>();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => multiple.Add(pseudonym));
     }
 
     [TestMethod]
@@ -76,8 +74,7 @@ public class MultiplePseudonymTests
 
         var multiple = new MultiplePseudonym(_domain, pseudonymList!);
 
-        var action = () => multiple.Add(pseudonym);
         Assert.AreEqual(10, multiple.Size());
-        action.Should().Throw<ArgumentOutOfRangeException>();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => multiple.Add(pseudonym));
     }
 }

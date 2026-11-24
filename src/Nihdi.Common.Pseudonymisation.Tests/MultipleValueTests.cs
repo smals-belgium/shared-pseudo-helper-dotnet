@@ -2,7 +2,6 @@
 // Copyright (c) Riziv-Inami. All rights reserved.
 // </copyright>
 
-using FluentAssertions;
 using Nihdi.Common.Pseudonymisation.Internal;
 using static Nihdi.Common.Pseudonymisation.Tests.TestUtils;
 
@@ -39,8 +38,7 @@ public class MultipleValueTests
         }
 
         Assert.AreEqual(10, multiple.Size());
-        var action = () => multiple.Add(value);
-        action.Should().ThrowExactly<ArgumentOutOfRangeException>();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => multiple.Add(value));
     }
 
     [TestMethod]
@@ -72,7 +70,6 @@ public class MultipleValueTests
         var multiple = new MultipleValue(_domain, valueList);
         Assert.AreEqual(10, multiple.Size());
 
-        var action = () => multiple.Add(value);
-        action.Should().ThrowExactly<ArgumentOutOfRangeException>();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => multiple.Add(value));
     }
 }
