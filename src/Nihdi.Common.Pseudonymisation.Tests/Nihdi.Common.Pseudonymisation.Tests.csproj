@@ -19,6 +19,7 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <IdentityModelVersion Condition="'$(IdentityModelVersion)' == ''">8.23.0</IdentityModelVersion>
     <!--<GenerateAssemblyInfo>false</GenerateAssemblyInfo>   
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>-->
       <LangVersion>12.0</LangVersion>
@@ -33,6 +34,11 @@
     <PackageReference Include="MSTest.TestAdapter" Version="3.6.3" />
     <PackageReference Include="MSTest.TestFramework" Version="3.6.3" />
     <PackageReference Include="BouncyCastle.Cryptography" Version="2.7.0" />
+    <!-- The library is built against Microsoft.IdentityModel.Tokens 7.6.2, but an application that already uses 8.x
+         resolves it to 8.x at run time. Some APIs that are public in 7.x are internal in 8.x, and the compiler
+         cannot see that: only running the tests against 8.x does. By default the tests run against 8.x; to run
+         them against the floor the package declares, pass -p:IdentityModelVersion=7.6.2. -->
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="$(IdentityModelVersion)" />
   </ItemGroup>
 
   <!-- Polyfills for .NET Framework: these APIs ship in-box on net8.0 and net10.0. -->

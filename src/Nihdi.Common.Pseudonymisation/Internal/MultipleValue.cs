@@ -5,7 +5,6 @@
 namespace Nihdi.Common.Pseudonymisation.Internal;
 
 using System.Text.Json.Nodes;
-using Microsoft.IdentityModel.Tokens;
 using Nihdi.Common.Pseudonymisation.Exceptions;
 using Org.BouncyCastle.Math;
 
@@ -62,7 +61,9 @@ internal class MultipleValue : MultiplePoint<IValue>, IMultipleValue
 
     private Task<IMultiplePseudonymInTransit> PseudonymizeImpl(CancellationToken cancellationToken)
     {
-        if (this.Points.IsNullOrEmpty())
+        // Not IsNullOrEmpty(): when Microsoft.IdentityModel.Tokens is in scope, it binds to an extension that is
+        // public in 7.x but internal in 8.x, and throws MethodAccessException for consumers running 8.x.
+        if (this.Points.Count == 0)
         {
             return Task.FromResult<IMultiplePseudonymInTransit>(new MultiplePseudonymInTransit(this.Domain));
         }
