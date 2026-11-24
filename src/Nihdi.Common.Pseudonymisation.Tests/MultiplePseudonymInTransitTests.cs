@@ -2,7 +2,6 @@
 // Copyright (c) Riziv-Inami. All rights reserved.
 // </copyright>
 
-using FluentAssertions;
 using Nihdi.Common.Pseudonymisation.Internal;
 
 namespace Nihdi.Common.Pseudonymisation.Tests;
@@ -69,8 +68,7 @@ public class MultiplePseudonymInTransitTests
 
         Assert.AreEqual(10, multiple.Size());
 
-        var action = () => multiple.Add(pseudonymInTransit);
-        action.Should().Throw<ArgumentOutOfRangeException>();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => multiple.Add(pseudonymInTransit));
     }
 
     [TestMethod]
@@ -109,8 +107,7 @@ public class MultiplePseudonymInTransitTests
         }
 
         var multiple = new MultiplePseudonymInTransit(_domain, pseudonymInTransitList!);
-        var action = () => multiple.Add(pseudonymInTransit);
         Assert.AreEqual(10, multiple.Size());
-        action.Should().Throw<ArgumentOutOfRangeException>();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => multiple.Add(pseudonymInTransit));
     }
 }
