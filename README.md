@@ -37,31 +37,31 @@ This section aims to explain the use of pseudonymisation in a real use case. It 
 
 In this example, a prescriber will consult prescriptions for a patient using an integrator software. The back-end (called UHMEP in our example) will call an external eHealth service (Attribute Authority) to verify the therapeutic relations (therapeutic link + exclusion) to determine if the prescriptions can be returned. Once this check is done, the prescriptions will be returned to the prescriber. An explanatory text of the diagram is present just after it.
 
-![](doc/images/use-case-1.png){alt="use case 1"}
+![](doc/images/use-case-1.png)
 
 1-2
 
-:   The patient identifier cannot be given to the back-end application. The integrator software will then use the library to pseudonymise the identifier, which is the Belgian Social Security Identification Number (SSIN), into a pseudonym in transit for the domain of the targeted back-end (UHMEP API in this case).
+The patient identifier cannot be given to the back-end application. The integrator software will then use the library to pseudonymise the identifier, which is the Belgian Social Security Identification Number (SSIN), into a pseudonym in transit for the domain of the targeted back-end (UHMEP API in this case).
 
 3-8
 
-:   The library will convert this identifier to a point on the elliptic curve (EC point), blind this EC point, and call the pseudonymize` operation of the eHealth Pseudonymisation service. The response will be unblinded and returned to the software. Blinding is necessary for each call to the eHealth Pseudonymisation service to prevent this service from seeing any kind of patient identifier (SSIN, pseudonym at rest).
+The library will convert this identifier to a point on the elliptic curve (EC point), blind this EC point, and call the `pseudonymize` operation of the eHealth Pseudonymisation service. The response will be unblinded and returned to the software. Blinding is necessary for each call to the eHealth Pseudonymisation service to prevent this service from seeing any kind of patient identifier (SSIN, pseudonym at rest).
 
 9
 
-:   The pseudonym in transit returned by the library can be used to request prescriptions from the back-end.
+The pseudonym in transit returned by the library can be used to request prescriptions from the back-end.
 
 10
 
-:   This pseudonym in transit will be decrypted by the back-end to remove the protection layer present during data exchange. The result of this decryption is called the pseudonym at rest, which will be stored in the back-end database. This pseudonym at rest will always be the same if the patient identifier is the same, which is not the case for the pseudonym in transit: it will always be different.
+This pseudonym in transit will be decrypted by the back-end to remove the protection layer present during data exchange. The result of this decryption is called the pseudonym at rest, which will be stored in the back-end database. This pseudonym at rest will always be the same if the patient identifier is the same, which is not the case for the pseudonym in transit: it will always be different.
 
 11-17
 
-:   This pseudonym at rest can be used to retrieve the patient's prescriptions, but first, the back-end needs to verify if those prescriptions can be consulted by the prescriber by checking the therapeutic relations. To do this, the back-end must call an external eHealth service and communicate for which patient the verification must be done. This will be done by providing a pseudonym in transit for the domain \"eHealth\". To obtain this pseudonym, the back-end converts its pseudonym at rest to a pseudonym in transit for eHealth. Once the verification is done, the back-end can return the prescriptions with a new pseudonym i transit for the patient information (by encrypting the pseudonym at rest).
+This pseudonym at rest can be used to retrieve the patient's prescriptions, but first, the back-end needs to verify if those prescriptions can be consulted by the prescriber by checking the therapeutic relations. To do this, the back-end must call an external eHealth service and communicate for which patient the verification must be done. This will be done by providing a pseudonym in transit for the domain \"eHealth\". To obtain this pseudonym, the back-end converts its pseudonym at rest to a pseudonym in transit for eHealth. Once the verification is done, the back-end can return the prescriptions with a new pseudonym in transit for the patient information (by encrypting the pseudonym at rest).
 
 18
 
-:   The integrator software can use the library to link this pseudonym in transit to the original identifier. In this case, this last call is not necessary but will be if the prescriber consults prescriptions he created and then receives prescriptions for many patients.
+The integrator software can use the library to link this pseudonym in transit to the original identifier. In this case, this last call is not necessary but will be if the prescriber consults prescriptions he created and then receives prescriptions for many patients.
 
 # Nuget Package
 
