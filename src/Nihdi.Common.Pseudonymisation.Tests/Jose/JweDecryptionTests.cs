@@ -28,11 +28,7 @@ public class JweDecryptionTests
     {
         // Generate RSA key pair using standard .NET API
         // This ensures we test against the actual platform behavior, not our abstraction
-#if NETFRAMEWORK
-        _rsa = new RSACng(2048);  // Explicitly use RSACng on .NET Framework
-#else
-        _rsa = RSA.Create(2048);   // Use default on .NET 8+
-#endif
+        _rsa = RSA.Create(2048);
 
         // Export parameters to create RsaSecurityKey
         var rsaParameters = _rsa.ExportParameters(true);
@@ -81,12 +77,8 @@ public class JweDecryptionTests
     [TestMethod]
     public void UnwrapKey_WithDifferentRsaKey_ThrowsCryptographicException()
     {
-        // Arrange - Use platform-specific RSA creation directly
-#if NETFRAMEWORK
-        using var differentRsa = new RSACng(2048);
-#else
+        // Arrange - Use platform RSA creation directly
         using var differentRsa = RSA.Create(2048);
-#endif
         var differentRsaParameters = differentRsa.ExportParameters(true);
         var differentKey = new RsaSecurityKey(differentRsaParameters);
 
@@ -497,12 +489,8 @@ public class JweDecryptionTests
 
         foreach (int keySize in keySizes)
         {
-            // Arrange - Use platform-specific RSA creation directly
-#if NETFRAMEWORK
-            using var rsa = new RSACng(keySize);
-#else
+            // Arrange - Use platform RSA creation directly
             using var rsa = RSA.Create(keySize);
-#endif
             var rsaParameters = rsa.ExportParameters(true);
             var rsaKey = new RsaSecurityKey(rsaParameters);
 
