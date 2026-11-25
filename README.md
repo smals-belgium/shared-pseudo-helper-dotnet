@@ -67,6 +67,8 @@ In this example, a prescriber will consult prescriptions for a patient using an 
 
 To use the library in your project, you need to add the Nuget package `Nihdi.Common.Pseudonymisation`. The package is available on Nuget.org: <https://www.nuget.org/packages/Nihdi.Common.Pseudonymisation/>.
 
+The package targets .NET 8 and .NET 10. It does not support .NET Framework.
+
 # Initialization PseudonymisationHelper
 
 PseudonymisationHelper is initialized using a builder which requires specific parameters to be provided. This guide outlines the steps and parameters needed for a successful initialization.
@@ -829,16 +831,14 @@ eHealth returns a `Task`.
 
 **If you cannot use `await`**
 
-Some code cannot be asynchronous: a constructor, `Application_Start`, an
-ASMX web service, a `MembershipProvider`, or an existing code base that
-is synchronous from top to bottom. There, you have to block until the
-task ends. Be aware that:
+Some code cannot be asynchronous: a constructor, an application start-up
+hook, or an existing code base that is synchronous from top to bottom.
+There, you have to block until the task ends. Be aware that:
 
 - the calling thread does nothing else while it waits;
-- in a classic ASP.NET application (.NET Framework) or in a desktop
-  application (WinForms, WPF), blocking can freeze the application for
-  good, when an `await` further down needs the very thread you are
-  blocking;
+- in a desktop application (WinForms, WPF), blocking can freeze the
+  application for good, when an `await` further down needs the very
+  thread you are blocking;
 - `.GetAwaiter().GetResult()` is preferable to `.Result`: when the call
   fails, you get the original exception instead of an
   `AggregateException` wrapping it.

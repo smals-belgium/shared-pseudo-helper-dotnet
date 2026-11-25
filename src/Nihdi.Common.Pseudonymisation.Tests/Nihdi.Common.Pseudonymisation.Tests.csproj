@@ -1,16 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Debugging a test by right-clicking it in the editor runs it on every target framework
-       below, one after the other, and the debugger cannot attach to the .NET Framework host: the
-       run then sits there doing nothing until you kill it, and only then reaches your breakpoint.
-       Debug from the Test Explorer instead. It lists the test once per target framework, so you
-       pick the one you want and only that one runs. -->
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net10.0;net48</TargetFrameworks>
-  </PropertyGroup>
-
-  <!-- Exclude .NET Framework 4.8 builds on non-Windows systems -->
-  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
     <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
   </PropertyGroup>
 
@@ -39,11 +29,6 @@
          cannot see that: only running the tests against 8.x does. By default the tests run against 8.x; to run
          them against the floor the package declares, pass -p:IdentityModelVersion=7.6.2. -->
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="$(IdentityModelVersion)" />
-  </ItemGroup>
-
-  <!-- Polyfills for .NET Framework: these APIs ship in-box on net8.0 and net10.0. -->
-  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
-    <PackageReference Include="System.Text.Json" Version="8.0.5" />
   </ItemGroup>
 
   <ItemGroup>

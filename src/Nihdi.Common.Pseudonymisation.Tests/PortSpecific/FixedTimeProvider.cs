@@ -9,7 +9,7 @@ namespace Nihdi.Common.Pseudonymisation.Tests.PortSpecific;
 /// chosen moment.
 /// <para>
 /// This replaces <c>FakeTimeProvider</c> of <c>Microsoft.Extensions.TimeProvider.Testing</c>: that
-/// package is not available on the internal NuGet feed, and does not support net48.
+/// package is not available on the internal NuGet feed.
 /// </para>
 /// </summary>
 internal sealed class FixedTimeProvider : TimeProvider
