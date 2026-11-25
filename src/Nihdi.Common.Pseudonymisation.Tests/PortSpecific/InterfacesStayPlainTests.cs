@@ -39,12 +39,11 @@ public class InterfacesStayPlainTests
                 .Select(f => $"{type.FullName}.{f.Name} (field)"));
         }
 
-        Assert.AreEqual(
-            0,
-            offenders.Count,
-            "The .NET Framework runtime cannot load an interface with a method body or a static member, "
+        var message = "The .NET Framework runtime cannot load an interface with a method body or a static member, "
             + "which would close the door on restoring the net48 target (see doc/restoring-net48.md). "
             + "Implement the member in the classes instead, or write it as an extension method. Offenders: "
-            + string.Join("; ", offenders));
+            + string.Join("; ", offenders);
+
+        Assert.AreEqual(0, offenders.Count, message);
     }
 }

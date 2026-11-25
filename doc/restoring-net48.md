@@ -1,9 +1,9 @@
 # Restoring the net48 target
 
 The library no longer targets .NET Framework 4.8: the target was dropped before 1.0.0, because
-nobody had asked for it and it carried its own dependencies and code paths. Adding `net48` back
-to `TargetFrameworks` in the library and the test project is not enough. This page lists what
-the compiler will not tell you.
+it carried its own dependencies and code paths. Adding `net48` back to `TargetFrameworks` in
+the library and the test project is not enough. This page lists what the compiler will not
+tell you.
 
 The test project used to carry an `app.config` with a binding redirect for
 `System.Runtime.CompilerServices.Unsafe`. It is not needed to restore the target: with it
@@ -24,6 +24,15 @@ git log --grep="net48"
   `#if NETFRAMEWORK`. Nothing fails at build time without it: it fails when a key is
   unwrapped. Bring back with it the tests that create their keys with `RSACng` and the one that
   checks the type returned by `RsaHelper.Create`.
+- **The build server signs the assembly again.** The (old) build server signs with a strong name
+  every project that targets .NET Framework or netstandard, whatever the project says. With
+  `net48` back, the library and the tests come out signed, a signed package replaces the
+  unsigned one, and `InternalsVisibleTo` by name alone is refused by the compiler (CS1726): a
+  signed assembly only accepts a friend assembly that names its public key. The code that did
+  that, with the public keys of the build server, is in the git history under the commit that
+  stopped signing: `git log --grep="strong name"`. Decide first whether a signed package is
+  wanted, because signing or not signing changes the identity of the assembly for those who
+  reference it.
 
 ## What would make a return impossible
 
