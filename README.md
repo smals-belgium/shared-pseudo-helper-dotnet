@@ -37,7 +37,7 @@ This section aims to explain the use of pseudonymisation in a real use case. It 
 
 In this example, a prescriber will consult prescriptions for a patient using an integrator software. The back-end (called UHMEP in our example) will call an external eHealth service (Attribute Authority) to verify the therapeutic relations (therapeutic link + exclusion) to determine if the prescriptions can be returned. Once this check is done, the prescriptions will be returned to the prescriber. An explanatory text of the diagram is present just after it.
 
-![](doc/images/use-case-1.png)
+![](https://raw.githubusercontent.com/smals-belgium/shared-pseudo-helper-dotnet/main/doc/images/use-case-1.png)
 
 1-2
 
