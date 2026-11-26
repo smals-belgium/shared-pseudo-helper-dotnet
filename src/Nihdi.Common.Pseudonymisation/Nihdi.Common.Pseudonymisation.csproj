@@ -12,7 +12,7 @@
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<LangVersion>12.0</LangVersion>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-		<PackageTags></PackageTags>
+		<PackageTags>pseudonymisation;ehealth;belgium</PackageTags>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -25,6 +25,7 @@
 		<PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
 		<RepositoryUrl>https://github.com/smals-belgium/shared-pseudo-helper-dotnet</RepositoryUrl>
 	    <PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageIcon>icon.png</PackageIcon>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -37,6 +38,7 @@
 	    <PackagePath>\</PackagePath>
 	  </None>
 	  <None Include="..\..\README.md" Pack="true" PackagePath="" />
+	  <None Include="icon.png" Pack="true" PackagePath="" />
 	</ItemGroup>
 
 	<ItemGroup>
